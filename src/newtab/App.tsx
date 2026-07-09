@@ -18,6 +18,9 @@ import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookm
 import { resolveMoveIndex } from '@/lib/reorder';
 import { filterBookmarks, buildSearchUrl } from '@/lib/search';
 import { ensureCapturePermission } from '@/lib/permissions';
+import { resolveTheme } from '@/lib/theme';
+import { getAsset } from '@/lib/thumbnails';
+import { WALLPAPER_KEY } from '@/lib/constants';
 import './styles.css';
 
 export default function App() {
@@ -65,6 +68,25 @@ export default function App() {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
+
+  // 应用主题与背景（纯色 / 壁纸图片）
+  useEffect(() => {
+    if (!settings) return;
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true;
+    document.documentElement.dataset.theme = resolveTheme(settings.theme, prefersDark);
+    let objectUrl: string | null = null;
+    if (settings.background.type === 'color') {
+      document.body.style.background = settings.background.value;
+    } else {
+      void getAsset(WALLPAPER_KEY).then((blob) => {
+        if (blob) {
+          objectUrl = URL.createObjectURL(blob);
+          document.body.style.background = `url(${objectUrl}) center/cover no-repeat fixed`;
+        }
+      });
+    }
+    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [settings]);
 
   const openUrl = useCallback((url: string) => {
     if (settings?.openInNewTab) window.open(url, '_blank', 'noopener');

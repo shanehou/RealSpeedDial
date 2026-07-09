@@ -3,6 +3,8 @@ import { getTree } from '@/lib/bookmarks';
 import { loadSettings, saveSettings } from '@/lib/settings';
 import { findNode } from '@/lib/mapping';
 import { ensureCapturePermission } from '@/lib/permissions';
+import { putAsset } from '@/lib/thumbnails';
+import { WALLPAPER_KEY } from '@/lib/constants';
 import type { BookmarkNode, Settings, TileStyle } from '@/types';
 import { FolderTreeSelect } from './components/FolderTreeSelect';
 import './styles.css';
@@ -76,8 +78,34 @@ export default function Options() {
           </select>
         </label>
         <label className="field">
+          <span>背景</span>
+          <select
+            aria-label="背景类型"
+            value={settings.background.type}
+            onChange={(e) => void patch({ background: e.target.value === 'wallpaper' ? { type: 'wallpaper' } : { type: 'color', value: '#1e2130' } })}
+          >
+            <option value="color">纯色</option>
+            <option value="wallpaper">壁纸图片</option>
+          </select>
+        </label>
+        {settings.background.type === 'color' && (
+          <label className="field">
+            <span>背景色</span>
+            <input type="color" value={settings.background.value} onChange={(e) => void patch({ background: { type: 'color', value: e.target.value } })} />
+          </label>
+        )}
+        {settings.background.type === 'wallpaper' && (
+          <label className="field">
+            <span>上传壁纸</span>
+            <input type="file" accept="image/*" onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (file) { await putAsset(WALLPAPER_KEY, file); await patch({ background: { type: 'wallpaper' } }); }
+            }} />
+          </label>
+        )}
+        <label className="field">
           <span>列数</span>
-          <input type="number" min={3} max={12} value={settings.columns} onChange={(e) => void patch({ columns: Number(e.target.value) })} />
+          <input type="number" min={3} max={12} value={settings.columns} onChange={(e) => void patch({ columns: Math.min(12, Math.max(3, Number(e.target.value) || 6)) })} />
         </label>
         <label className="field">
           <span>在新标签页打开书签</span>
