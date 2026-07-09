@@ -2,7 +2,7 @@
 
 - 日期：2026-07-09
 - 状态：已与用户确认，待评审
-- 范围：在既有 Real Speed Dial 扩展上做 7 项改进，不改变"书签是唯一事实来源 + 递归替换导航"的核心模型。
+- 范围：在既有 Real Speed Dial 扩展上做 7 项改进 + 1 项搜索增强（§8），不改变"书签是唯一事实来源 + 递归替换导航"的核心模型。
 
 ## 背景
 
@@ -78,7 +78,7 @@ Real Speed Dial 是一个类 Vivaldi 的书签 Speed Dial 新标签页扩展（M
 - **默认落地与初始化**：`resolveInitialNav` 校验 `navState` 是否仍存在于整棵树；默认落地 = `rootFolderId`；`rootFolderId` 失效则回退到「书签栏」(`id="1"`)；`rootFolderId` 未设置 → 仍显示引导页（其文案改为"选择默认落地目录"）。
 - **导航无边界**：面包屑（向上/任意）、Tab、「进入」按钮（#4）、文件夹磁贴（向下）都在整棵树内自由导航。
 - **回归测试**：现有测试仅断言 crumb 存在，需补"点击祖先级 crumb 确实导航""能从深层一路点回到书签根"的测试。
-- **搜索范围（本轮保持不变）**：实时过滤仍限定在"配置的默认落地目录子树"内（`findNode(fullRoot, rootFolderId)` 后过滤），避免行为突变；如需改为整树搜索可后续再议。
+- **搜索范围**：见 §8（本轮扩展为整棵书签树 + 分组 + 完整路径）。
 
 ---
 
@@ -189,11 +189,33 @@ interface WallpaperAttribution {                // 仅 Unsplash 需要
 
 ---
 
+## 8. 搜索增强（整树 + 分组 + 完整路径）
+
+在 #3 已改为整树加载的基础上，实时搜索一并升级（用户新增需求）。
+
+- **范围**：实时过滤扩展到**整棵书签树**：`searchBookmarks(fullRoot, query, currentFolderId)`。
+- **分组**：结果分两组——
+  - **当前目录**：命中项的祖先链包含"当前目录 `folderId`"（即位于当前目录及其子孙内）。
+  - **其他目录**：其余命中。
+  - 某组为空则不显示该组标题；两组皆空显示空态。`currentFolderId` = 面包屑末端（当前所在目录）。
+- **每条结果带完整路径**：显示从顶层书签目录（跳过不可见根 `id="0"`）到其父目录的路径，如「书签栏 › 工作 › 项目 A」，便于识别真实位置。
+- **布局（仅搜索态）**：由磁贴网格切换为**分组行列表**；每行 = favicon + 标题 + 灰色路径，行本身是真 `<a href>`（hover 时浏览器左下角显示网址，与 #6 一致），保留右键菜单（编辑/删除等）。
+- **数据结构（`search.ts`）**：
+  ```ts
+  interface SearchHit { id: string; title: string; url: string; path: Crumb[]; }
+  interface GroupedSearch { current: SearchHit[]; others: SearchHit[]; }
+  ```
+  DFS 携带路径栈，命中即记录（路径为副本、排除不可见根）；按 `folderId` 是否在祖先链内分组。
+- **组件**：新增 `SearchResults.tsx`（渲染两组标题 + 行）；`App` 搜索分支改用它；`findItem` 需在两组命中中查找（供右键菜单定位目标）。
+
+---
+
 ## 数据模型变更汇总（`types.ts`）
 - `BackgroundSetting` 增 `{ type:'auto'; source:WallpaperSource }`。
 - `Settings` 增 `language`（`unsplashAccessKey` 不入同步的 `Settings`，改存 `storage.local`）。
 - `DEFAULT_SETTINGS` 增 `language:'auto'`。
 - 新增 `WallpaperSource`、`WallpaperAttribution`。
+- 新增 `SearchHit`、`GroupedSearch`（`search.ts`）。
 - `rootFolderId` 语义变化：由"导航边界/唯一可见范围"改为"新标签页默认落地目录"（无类型变更）。
 - `constants.ts` 增 `UNSPLASH_KEY`（storage.local）、壁纸缓存相关键。
 
@@ -204,17 +226,18 @@ interface WallpaperAttribution {                // 仅 Unsplash 需要
 ## 测试策略（Vitest + Testing Library）
 - 导航：面包屑从浏览器书签根（`id="0"` 渲染为「书签/Bookmarks」home 级）显示到当前目录；点击祖先级（含根级）确实导航（回归）；从深层能一路点回书签根；`TabBar` 进入按钮仅在激活的非主页 Tab 出现、点击后 `folderId` 变更且面包屑加深。
 - 数据加载：`useBookmarkTree` 走 `getTree()`；`resolveInitialNav` 默认落地 = `rootFolderId`、失效回退到书签栏。
+- 搜索：`searchBookmarks` 覆盖整树、按 `folderId` 祖先链正确分组（当前/其他）、每条 `path` 正确（排除不可见根）；`findItem` 能在两组中定位供右键菜单。
 - 磁贴：渲染为带正确 `href` 的 `<a>`；`openInNewTab` 影响 `target`；拖拽后不误触跳转。
 - i18n：`t()` 插值与回退；`resolveLang('auto')` 判定；切换语言后 UI 文案更新。
 - 壁纸：`todayKey` 缓存命中/未命中；离线回退到缓存；`resolveUnsplash` 产出的 URL 含尺寸参、`download_location` 被调用；`screenPx` 钳制。
 - 配色：主题色磁贴带 `tile--theme` 及可读层类。
 
 ## 已知限制
-- 导航范围现在是**整棵书签树**（可越过默认落地目录向上/向任意分支浏览）；而实时搜索本轮仍限定在默认落地目录子树——两者范围不对称，属有意取舍（见 §3.3）。
+- 导航与搜索现在都覆盖**整棵书签树**：导航可越过默认落地目录向任意分支浏览；搜索跨整树并按"当前目录/其他目录"分组展示（见 §8）。
 - 因采用自建 i18n（非 `chrome.i18n`），Chrome 商店清单的**名称/描述**保持单一语言（英文）；仅 App 内 UI 双语可切换。
 - Unsplash 需用户自备 Access Key（默认关闭），且 key 以客户端方式存于本地浏览器（无代理）。
 - Bing/Picsum 通过其公共服务取图，可用性受第三方服务影响；离线时回退到缓存。
 
 ## 涉及文件（预估）
-- 新增：`LICENSE`、`README.zh-CN.md`、`src/lib/i18n.ts`、`src/lib/wallpaper.ts`、`src/newtab/hooks/useI18n.ts`、`src/newtab/components/Attribution.tsx`、以及相应测试。
-- 修改：`package.json`、`README.md`、`manifest.config.ts`、`src/types.ts`、`src/lib/constants.ts`、`src/lib/permissions.ts`、`src/lib/mapping.ts`（面包屑根节点/整树祖先）、`src/lib/navState.ts`（对整树校验、失效回退）、`src/lib/search.ts`（过滤限定到默认落地目录子树）、`src/newtab/hooks/useBookmarkTree.ts`（改用 `getTree()`）、`src/newtab/hooks/useNavState.ts`、`src/newtab/App.tsx`、`src/newtab/components/{TabBar,Breadcrumb,Tile,Grid,ContextMenu,EditDialog,EmptyState,Guidance,SearchBar,States}.tsx`、`src/options/Options.tsx`、`src/options/components/FolderTreeSelect.tsx`、`src/newtab/styles.css`、`src/options/styles.css`。
+- 新增：`LICENSE`、`README.zh-CN.md`、`src/lib/i18n.ts`、`src/lib/wallpaper.ts`、`src/newtab/hooks/useI18n.ts`、`src/newtab/components/Attribution.tsx`、`src/newtab/components/SearchResults.tsx`、以及相应测试。
+- 修改：`package.json`、`README.md`、`manifest.config.ts`、`src/types.ts`、`src/lib/constants.ts`、`src/lib/permissions.ts`、`src/lib/mapping.ts`（面包屑根节点/整树祖先）、`src/lib/navState.ts`（对整树校验、失效回退）、`src/lib/search.ts`（整树搜索 + 当前/其他分组 + 完整路径）、`src/newtab/hooks/useBookmarkTree.ts`（改用 `getTree()`）、`src/newtab/hooks/useNavState.ts`、`src/newtab/App.tsx`、`src/newtab/components/{TabBar,Breadcrumb,Tile,Grid,ContextMenu,EditDialog,EmptyState,Guidance,SearchBar,States}.tsx`、`src/options/Options.tsx`、`src/options/components/FolderTreeSelect.tsx`、`src/newtab/styles.css`、`src/options/styles.css`。
