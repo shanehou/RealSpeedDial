@@ -1,0 +1,19 @@
+# Superpowers brainstorming scratch files
+.superpowers/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
