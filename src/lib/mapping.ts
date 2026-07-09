@@ -1,4 +1,5 @@
-import type { BookmarkNode } from '@/types';
+import { HOME_TAB_ID } from './constants';
+import type { BookmarkNode, TabModel } from '@/types';
 
 export function isFolder(node: BookmarkNode): boolean {
   return node.url === undefined;
@@ -33,4 +34,22 @@ export function getAncestors(root: BookmarkNode, id: string): BookmarkNode[] {
     return false;
   }
   return dfs(root) ? path : [];
+}
+
+export function buildTabs(folder: BookmarkNode): TabModel[] {
+  const tabs: TabModel[] = [];
+  if (getBookmarks(folder).length > 0) {
+    tabs.push({ id: HOME_TAB_ID, title: '主页', isHome: true });
+  }
+  for (const sf of getSubfolders(folder)) {
+    tabs.push({ id: sf.id, title: sf.title, isHome: false });
+  }
+  return tabs;
+}
+
+export function resolveActiveTabId(folder: BookmarkNode, requested?: string): string {
+  const tabs = buildTabs(folder);
+  if (tabs.length === 0) return '';
+  if (requested && tabs.some((t) => t.id === requested)) return requested;
+  return tabs[0].id;
 }

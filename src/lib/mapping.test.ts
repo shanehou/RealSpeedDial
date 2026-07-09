@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isFolder, getBookmarks, getSubfolders, findNode, getAncestors } from './mapping';
+import { isFolder, getBookmarks, getSubfolders, findNode, getAncestors, buildTabs, resolveActiveTabId } from './mapping';
+import { HOME_TAB_ID } from './constants';
 import type { BookmarkNode } from '@/types';
 
 const tree: BookmarkNode = {
@@ -32,5 +33,38 @@ describe('tree utils', () => {
   it('getAncestors returns root..node path', () => {
     expect(getAncestors(tree, 'f2').map((n) => n.id)).toEqual(['root', 'f1', 'f2']);
     expect(getAncestors(tree, 'nope')).toEqual([]);
+  });
+});
+
+describe('buildTabs', () => {
+  it('adds Home tab when folder has direct bookmarks, then subfolders', () => {
+    const tabs = buildTabs(tree);
+    expect(tabs.map((t) => t.id)).toEqual([HOME_TAB_ID, 'f1']);
+    expect(tabs[0].isHome).toBe(true);
+    expect(tabs[1].title).toBe('工作');
+  });
+  it('omits Home tab when no direct bookmarks', () => {
+    const folder: BookmarkNode = { id: 'x', title: 'X', children: [
+      { id: 'sf', title: 'Sub', index: 0, children: [] },
+    ] };
+    expect(buildTabs(folder).map((t) => t.id)).toEqual(['sf']);
+  });
+  it('returns only Home when folder has only bookmarks', () => {
+    const folder: BookmarkNode = { id: 'x', title: 'X', children: [
+      { id: 'b', title: 'B', url: 'https://b.com', index: 0 },
+    ] };
+    expect(buildTabs(folder).map((t) => t.id)).toEqual([HOME_TAB_ID]);
+  });
+});
+
+describe('resolveActiveTabId', () => {
+  it('keeps requested tab when valid', () => {
+    expect(resolveActiveTabId(tree, 'f1')).toBe('f1');
+  });
+  it('falls back to first tab when requested invalid', () => {
+    expect(resolveActiveTabId(tree, 'zzz')).toBe(HOME_TAB_ID);
+  });
+  it('returns empty string when no tabs', () => {
+    expect(resolveActiveTabId({ id: 'e', title: 'E', children: [] }, undefined)).toBe('');
   });
 });
