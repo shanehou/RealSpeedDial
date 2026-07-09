@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { installChromeMock, type ChromeMock } from '../../tests/setup';
 import App from './App';
@@ -41,6 +41,21 @@ describe('App navigation', () => {
     await userEvent.click(await screen.findByRole('button', { name: /📁 后端/ }));
     await waitFor(() => expect(screen.getByText('MySQL')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: '根' })).toBeInTheDocument();
+  });
+  it('restores root Home when browser Back is pressed after drilling in', async () => {
+    render(<App />);
+    await screen.findByRole('tab', { name: '工作' });
+    await userEvent.click(screen.getByRole('tab', { name: '工作' }));
+    await userEvent.click(await screen.findByRole('button', { name: /📁 后端/ }));
+    await waitFor(() => expect(screen.getByText('MySQL')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: '根' })).toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate', { state: { folderId: 'root', tabId: '__home__' } }));
+    });
+
+    await waitFor(() => expect(screen.getByText('GitHub')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: '根' })).not.toBeInTheDocument();
   });
   it('shows guidance when no root selected', async () => {
     await c.storage.sync.set({ [SETTINGS_KEY]: { rootFolderId: null } });

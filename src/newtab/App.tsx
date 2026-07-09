@@ -28,6 +28,8 @@ export default function App() {
     const initialTab = restored?.selectedTabId ?? HOME_TAB_ID;
     setFolderId(initialFolder);
     setTabId(initialTab);
+    // 播种基础 history 条目，使首次按下浏览器后退键即可从当前位置正确回退
+    history.replaceState({ folderId: initialFolder, tabId: initialTab }, '');
   }, [root, ready, navState, settings, folderId]);
 
   const view = useMemo(() => {
@@ -52,7 +54,7 @@ export default function App() {
   }, []);
 
   const openUrl = useCallback((url: string) => {
-    if (settings?.openInNewTab) window.open(url, '_blank');
+    if (settings?.openInNewTab) window.open(url, '_blank', 'noopener');
     else window.location.href = url;
   }, [settings]);
 
