@@ -29,3 +29,7 @@ body { margin: 0; font-family: system-ui, -apple-system, "PingFang SC", sans-ser
 .dialog-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .dialog-field input { padding: 8px; border-radius: 6px; border: 1px solid #3a3f57; background: #1e2130; color: #e8eaed; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.ctxmenu { position: fixed; background: #262a3d; border: 1px solid #3a3f57; border-radius: 8px; padding: 4px; min-width: 140px; z-index: 100; }
+.ctxmenu__item { display: block; width: 100%; text-align: left; background: none; border: none; color: #e8eaed; padding: 8px 12px; cursor: pointer; border-radius: 6px; }
+.ctxmenu__item:hover { background: #333852; }
+.ctxmenu__item--danger { color: #ff8a8a; }

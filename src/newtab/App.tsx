@@ -10,7 +10,8 @@ import { Breadcrumb } from './components/Breadcrumb';
 import { EmptyState } from './components/EmptyState';
 import { Guidance } from './components/Guidance';
 import { EditDialog, type EditMode } from './components/EditDialog';
-import { createBookmark, updateBookmark } from '@/lib/bookmarks';
+import { ContextMenu, type MenuAction } from './components/ContextMenu';
+import { createBookmark, updateBookmark, removeBookmark, removeFolder } from '@/lib/bookmarks';
 import './styles.css';
 
 export default function App() {
@@ -73,6 +74,30 @@ export default function App() {
     setDialog(null);
   }, [dialog, folderId]);
 
+  const [menu, setMenu] = useState<{ x: number; y: number; id: string; isFolder: boolean } | null>(null);
+
+  const openContextMenu = useCallback((e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    const isFolder = view?.items.find((it) => it.id === id)?.kind === 'folder';
+    setMenu({ x: e.clientX, y: e.clientY, id, isFolder: !!isFolder });
+  }, [view]);
+
+  const handleMenuAction = useCallback(async (a: MenuAction) => {
+    if (!menu || !view) return;
+    const item = view.items.find((it) => it.id === menu.id);
+    if (!item) { setMenu(null); return; }
+    if (a === 'delete') {
+      if (item.kind === 'folder') await removeFolder(item.id); else await removeBookmark(item.id);
+    } else if (a === 'edit') {
+      if (item.kind === 'bookmark') setDialog({ mode: 'edit-bookmark', targetId: item.id, initial: { title: item.title, url: item.url } });
+      else setDialog({ mode: 'rename-folder', targetId: item.id, initial: { title: item.title } });
+    } else if (a === 'open-new-tab' && item.kind === 'bookmark') {
+      window.open(item.url, '_blank');
+    }
+    // 'refresh-thumb' 在 Phase 8 接入
+    setMenu(null);
+  }, [menu, view]);
+
   if (!settings || loading) return <div className="loading" />;
   if (!rootId) return <Guidance onOpenOptions={openOptions} />;
   if (!view) return <div className="loading" />;
@@ -90,11 +115,12 @@ export default function App() {
           thumbnails={{}}
           onOpen={openUrl}
           onEnter={(id) => navigate(id, HOME_TAB_ID, true)}
-          onContextMenu={() => {}}
+          onContextMenu={openContextMenu}
         />
       )}
       <button className="fab" onClick={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })}>＋</button>
       {dialog && <EditDialog mode={dialog.mode} initial={dialog.initial} onSubmit={submitDialog} onCancel={() => setDialog(null)} />}
+      {menu && <ContextMenu x={menu.x} y={menu.y} isFolder={menu.isFolder} onAction={handleMenuAction} onClose={() => setMenu(null)} />}
     </div>
   );
 }
