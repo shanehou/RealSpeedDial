@@ -32,17 +32,23 @@ export default function Options() {
 
   return (
     <div className="options">
-      <h1>Real Speed Dial 设置 {saved && <span className="saved-badge" role="status">✓ 已保存</span>}</h1>
+      <div className="options-header">
+        <div>
+          <h1>Real Speed Dial 设置</h1>
+          <p className="hint">所有更改即时生效，无需保存。</p>
+        </div>
+        <div className="options-header__right">
+          {saved && <span className="saved-badge" role="status">✓ 已保存</span>}
+          <button className="btn btn--primary" onClick={() => chrome.tabs.create({})}>打开新标签页查看效果</button>
+        </div>
+      </div>
 
       <section>
         <h2>根目录</h2>
         <p className="hint">选择一个书签目录作为首页内容来源。</p>
         <FolderTreeSelect tree={tree} selectedId={settings.rootFolderId} onSelect={(id) => void patch({ rootFolderId: id })} />
         {selectedFolder ? (
-          <div className="confirm">
-            <span>✓ 当前首页目录：<b>{selectedFolder.title || '（未命名）'}</b>，设置即时生效。</span>
-            <button className="btn btn--primary" onClick={() => chrome.tabs.create({})}>打开新标签页查看效果</button>
-          </div>
+          <p className="confirm">✓ 当前首页目录：<b>{selectedFolder.title || '（未命名）'}</b></p>
         ) : (
           <p className="warn">尚未选择目录，新标签页会提示你来这里选择。</p>
         )}
@@ -72,27 +78,30 @@ export default function Options() {
         {settings.tileStyle === 'screenshot' && (
           <>
             <label className="field">
-              <span>截图更新时机</span>
+              <span>自动重新截图</span>
               <select
-                aria-label="截图更新时机"
+                aria-label="自动重新截图"
                 value={settings.thumbnailPolicy}
                 onChange={(e) => void patch({ thumbnailPolicy: e.target.value as Settings['thumbnailPolicy'] })}
               >
-                <option value="always">每次访问</option>
-                <option value="stale">超过 N 天才更新</option>
-                <option value="never">从不自动</option>
+                <option value="always">每次访问该网站时</option>
+                <option value="stale">仅当已有截图过旧时</option>
+                <option value="never">从不（只手动刷新）</option>
               </select>
             </label>
             {settings.thumbnailPolicy === 'stale' && (
               <label className="field">
-                <span>过期天数 N</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={90}
-                  value={settings.thumbnailStaleDays}
-                  onChange={(e) => void patch({ thumbnailStaleDays: Math.min(90, Math.max(1, Number(e.target.value) || 7)) })}
-                />
+                <span>截图超过多少天视为过旧</span>
+                <span className="field-inline">
+                  <input
+                    type="number"
+                    min={1}
+                    max={90}
+                    value={settings.thumbnailStaleDays}
+                    onChange={(e) => void patch({ thumbnailStaleDays: Math.min(90, Math.max(1, Number(e.target.value) || 7)) })}
+                  />
+                  <span className="unit">天后再次访问时自动更新</span>
+                </span>
               </label>
             )}
           </>

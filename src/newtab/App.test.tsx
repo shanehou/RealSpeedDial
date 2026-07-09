@@ -32,30 +32,30 @@ describe('App navigation', () => {
     await screen.findByRole('tab', { name: '工作' });
     await userEvent.click(screen.getByRole('tab', { name: '工作' }));
     await waitFor(() => expect(screen.getByText('Jira')).toBeInTheDocument());
-    expect(screen.getByText(/📁 后端/)).toBeInTheDocument();
+    expect(screen.getByText('后端')).toBeInTheDocument();
   });
   it('drills into folder tile (recursive replace) and shows breadcrumb', async () => {
     render(<App />);
     await screen.findByRole('tab', { name: '工作' });
     await userEvent.click(screen.getByRole('tab', { name: '工作' }));
-    await userEvent.click(await screen.findByText(/📁 后端/));
+    await userEvent.click(await screen.findByText('后端'));
     await waitFor(() => expect(screen.getByText('MySQL')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: '根' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /根/ })).toBeInTheDocument();
   });
   it('restores root Home when browser Back is pressed after drilling in', async () => {
     render(<App />);
     await screen.findByRole('tab', { name: '工作' });
     await userEvent.click(screen.getByRole('tab', { name: '工作' }));
-    await userEvent.click(await screen.findByText(/📁 后端/));
+    await userEvent.click(await screen.findByText('后端'));
     await waitFor(() => expect(screen.getByText('MySQL')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: '根' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /根/ })).toBeInTheDocument();
 
     act(() => {
       window.dispatchEvent(new PopStateEvent('popstate', { state: { folderId: 'root', tabId: '__home__' } }));
     });
 
     await waitFor(() => expect(screen.getByText('GitHub')).toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: '根' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /根/ })).not.toBeInTheDocument();
   });
   it('shows guidance when no root selected', async () => {
     await c.storage.sync.set({ [SETTINGS_KEY]: { rootFolderId: null } });

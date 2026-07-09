@@ -12,29 +12,28 @@ interface Props {
   onContextMenu: (e: React.MouseEvent, id: string) => void;
 }
 
+// 标题为主视觉（类 logo），favicon 缩为左上角小图标，避免放大导致锯齿；
+// 有网页截图时截图铺满卡片，底部渐变蒙层保证标题可读。
 export function Tile({ id, title, url, thumbnail, tileStyle = 'favicon', onOpen, onContextMenu }: Props) {
   const [imgOk, setImgOk] = useState(true);
-  // 回退链：截图 → 主题色 → favicon → 首字母。themeColor 样式、或截图样式但暂无截图时，
-  // 用 favicon 主色渐变作背景衬托，避免空白。
   const themeMode = !thumbnail && (tileStyle === 'themeColor' || tileStyle === 'screenshot');
   return (
     <button
-      className="tile"
-      style={themeMode ? { background: `linear-gradient(135deg, ${colorFromString(url)}, #1e2130)` } : undefined}
+      className={`tile${thumbnail ? ' tile--shot' : ''}`}
+      style={themeMode ? { background: `linear-gradient(135deg, ${colorFromString(url)}, #262a3d)` } : undefined}
       onClick={() => onOpen(url)}
       onContextMenu={(e) => onContextMenu(e, id)}
       title={title}
     >
-      <div className="tile__thumb">
-        {thumbnail ? (
-          <img src={thumbnail} alt="" className="tile__screenshot" />
-        ) : imgOk ? (
-          <img src={faviconUrl(url, 64)} alt="" className="tile__favicon" onError={() => setImgOk(false)} />
+      {thumbnail && <img src={thumbnail} alt="" className="tile__screenshot" />}
+      <span className="tile__fav">
+        {imgOk ? (
+          <img src={faviconUrl(url, 32)} alt="" onError={() => setImgOk(false)} />
         ) : (
-          <span className="tile__letter" style={{ background: colorFromString(url) }}>{firstLetter(url)}</span>
+          <span className="tile__fav-letter" style={{ background: colorFromString(url) }}>{firstLetter(url)}</span>
         )}
-      </div>
-      <span className="tile__label">{title}</span>
+      </span>
+      <span className="tile__title">{title}</span>
     </button>
   );
 }

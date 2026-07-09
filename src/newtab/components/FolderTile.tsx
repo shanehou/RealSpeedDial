@@ -1,14 +1,12 @@
-import { faviconUrl } from '@/lib/favicon';
-
 interface Props {
   id: string;
   title: string;
-  preview: string[];
+  preview?: string[];
   onEnter: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, id: string) => void;
 }
 
-export function FolderTile({ id, title, preview, onEnter, onContextMenu }: Props) {
+export function FolderTile({ id, title, onEnter, onContextMenu }: Props) {
   return (
     <button
       className="tile tile--folder"
@@ -16,12 +14,12 @@ export function FolderTile({ id, title, preview, onEnter, onContextMenu }: Props
       onContextMenu={(e) => onContextMenu(e, id)}
       title={title}
     >
-      <div className="tile__thumb tile__folder-grid">
-        {preview.slice(0, 4).map((u) => (
-          <img key={u} src={faviconUrl(u, 32)} alt="" />
-        ))}
-      </div>
-      <span className="tile__label">📁 {title}</span>
+      <span className="tile__fav tile__fav--folder" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        </svg>
+      </span>
+      <span className="tile__title">{title}</span>
     </button>
   );
 }

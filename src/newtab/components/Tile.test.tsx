@@ -23,14 +23,13 @@ describe('Tile', () => {
     const shot = container.querySelector('img.tile__screenshot');
     expect(shot).toBeInTheDocument();
     expect(shot).toHaveAttribute('src', 'data:img');
-    expect(container.querySelector('img.tile__favicon')).toBeNull();
   });
 
-  it('renders a favicon image by default when no thumbnail is provided', () => {
+  it('renders a small favicon in the corner by default', () => {
     const { container } = render(
       <Tile id="b" title="GitHub" url="https://github.com" onOpen={() => {}} onContextMenu={() => {}} />,
     );
-    const fav = container.querySelector('img.tile__favicon');
+    const fav = container.querySelector('.tile__fav img');
     expect(fav).toBeInTheDocument();
     expect(fav?.getAttribute('src')).toContain('/_favicon/');
     expect(container.querySelector('img.tile__screenshot')).toBeNull();
@@ -40,25 +39,23 @@ describe('Tile', () => {
     const { container } = render(
       <Tile id="b" title="GitHub" url="https://github.com" onOpen={() => {}} onContextMenu={() => {}} />,
     );
-    const fav = container.querySelector('img.tile__favicon');
+    const fav = container.querySelector('.tile__fav img');
     expect(fav).toBeInTheDocument();
     fireEvent.error(fav!);
-    expect(container.querySelector('img.tile__favicon')).toBeNull();
+    expect(container.querySelector('.tile__fav img')).toBeNull();
     const letter = screen.getByText('G');
     expect(letter).toBeInTheDocument();
-    expect(letter).toHaveClass('tile__letter');
+    expect(letter).toHaveClass('tile__fav-letter');
   });
 
   it('applies a theme-color gradient background in themeColor style without a thumbnail', () => {
     render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="themeColor" onOpen={() => {}} onContextMenu={() => {}} />);
-    const btn = screen.getByRole('button', { name: /GitHub/ });
-    expect(btn.getAttribute('style')).toContain('linear-gradient');
+    expect(screen.getByRole('button', { name: /GitHub/ }).getAttribute('style')).toContain('linear-gradient');
   });
 
   it('does not add a gradient in favicon style', () => {
     render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="favicon" onOpen={() => {}} onContextMenu={() => {}} />);
-    const btn = screen.getByRole('button', { name: /GitHub/ });
-    expect(btn.getAttribute('style') ?? '').not.toContain('linear-gradient');
+    expect(screen.getByRole('button', { name: /GitHub/ }).getAttribute('style') ?? '').not.toContain('linear-gradient');
   });
 });
 
