@@ -6,7 +6,7 @@ interface Props {
 }
 
 export function Breadcrumb({ crumbs, onGo }: Props) {
-  if (crumbs.length <= 1) return null;
+  if (crumbs.length === 0) return null;
   return (
     <nav className="breadcrumb" aria-label="breadcrumb">
       {crumbs.map((c, i) => {

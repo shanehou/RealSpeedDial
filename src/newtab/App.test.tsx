@@ -63,6 +63,17 @@ describe('App navigation', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /选择目录/ })).toBeInTheDocument());
   });
 
+  it('filters tiles live as you type in the search box', async () => {
+    render(<App />);
+    await screen.findByRole('tab', { name: '工作' });
+    await userEvent.type(screen.getByRole('searchbox'), 'jira');
+    await waitFor(() => expect(screen.getByText(/搜索结果/)).toBeInTheDocument());
+    expect(screen.getByText('Jira')).toBeInTheDocument();
+    // 搜索态隐藏 Tab 栏与非匹配项
+    expect(screen.queryByRole('tab', { name: '工作' })).not.toBeInTheDocument();
+    expect(screen.queryByText('GitHub')).not.toBeInTheDocument();
+  });
+
   it('adds a new bookmark into the active subfolder tab, not the parent home', async () => {
     c.bookmarks.create.mockResolvedValue({ id: 'newb' });
     render(<App />);

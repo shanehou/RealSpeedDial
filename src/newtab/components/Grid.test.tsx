@@ -33,8 +33,13 @@ describe('Breadcrumb', () => {
     await userEvent.click(screen.getByRole('button', { name: '根' }));
     expect(onGo).toHaveBeenCalledWith('root');
   });
-  it('renders nothing when single crumb', () => {
-    const { container } = render(<Breadcrumb crumbs={[{ id: 'root', title: '根' }]} onGo={() => {}} />);
+  it('renders a single crumb as current (non-clickable)', () => {
+    render(<Breadcrumb crumbs={[{ id: 'root', title: '根' }]} onGo={() => {}} />);
+    expect(screen.getByText('根')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '根' })).not.toBeInTheDocument();
+  });
+  it('renders nothing when no crumbs', () => {
+    const { container } = render(<Breadcrumb crumbs={[]} onGo={() => {}} />);
     expect(container).toBeEmptyDOMElement();
   });
 });

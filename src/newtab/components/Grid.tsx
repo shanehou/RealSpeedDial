@@ -50,7 +50,7 @@ export function Grid({ items, columns, thumbnails, tileStyle, onOpen, onEnter, o
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+        <div className="grid" style={{ ['--cols']: String(columns) } as React.CSSProperties}>
           {items.map((it) => (
             <SortableCell key={it.id} item={it}>
               {it.kind === 'bookmark' ? (

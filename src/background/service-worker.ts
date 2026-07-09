@@ -65,4 +65,7 @@ chrome.runtime.onMessage.addListener((msg: RsdMessage, _sender, sendResponse: (r
   return true; // 异步响应
 });
 
+// 点击工具栏图标打开设置页；右键图标时 Chrome 会自动附带「选项」入口（因已声明 options_page）
+chrome.action.onClicked.addListener(() => { void chrome.runtime.openOptionsPage(); });
+
 console.info('[RSD] service worker ready');

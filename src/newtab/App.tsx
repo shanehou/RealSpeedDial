@@ -8,6 +8,7 @@ import { resolveInitialNav } from '@/lib/navState';
 import { HOME_TAB_ID } from '@/lib/constants';
 import { TabBar } from './components/TabBar';
 import { Grid } from './components/Grid';
+import { Tile } from './components/Tile';
 import { Breadcrumb } from './components/Breadcrumb';
 import { EmptyState } from './components/EmptyState';
 import { Guidance } from './components/Guidance';
@@ -121,15 +122,21 @@ export default function App() {
 
   const [menu, setMenu] = useState<{ x: number; y: number; id: string; isFolder: boolean } | null>(null);
 
+  // 上下文菜单可作用于普通网格项或搜索结果项
+  const findItem = useCallback(
+    (id: string) => view?.items.find((it) => it.id === id) ?? searchResults.find((b) => b.id === id),
+    [view, searchResults],
+  );
+
   const openContextMenu = useCallback((e: React.MouseEvent, id: string) => {
     e.preventDefault();
-    const isFolder = view?.items.find((it) => it.id === id)?.kind === 'folder';
+    const isFolder = findItem(id)?.kind === 'folder';
     setMenu({ x: e.clientX, y: e.clientY, id, isFolder: !!isFolder });
-  }, [view]);
+  }, [findItem]);
 
   const handleMenuAction = useCallback(async (a: MenuAction) => {
-    if (!menu || !view) return;
-    const item = view.items.find((it) => it.id === menu.id);
+    if (!menu) return;
+    const item = findItem(menu.id);
     if (!item) { setMenu(null); return; }
     if (a === 'delete') {
       if (item.kind === 'folder') await removeFolder(item.id);
@@ -146,7 +153,7 @@ export default function App() {
       }
     }
     setMenu(null);
-  }, [menu, view]);
+  }, [menu, findItem]);
 
   const handleReorder = useCallback(async (activeId: string, from: number, to: number) => {
     if (folderId === null || !view) return;
@@ -164,26 +171,55 @@ export default function App() {
   if (!rootId) return <Guidance onOpenOptions={openOptions} />;
   if (!view) return <div className="loading" />;
 
+  // 面包屑始终可见：到当前文件夹的路径；若当前激活的是子目录 Tab，则追加它作为当前层
+  const activeTab = tabId !== HOME_TAB_ID ? view.tabs.find((t) => t.id === tabId) : undefined;
+  const crumbs = activeTab ? [...view.breadcrumb, { id: activeTab.id, title: activeTab.title }] : view.breadcrumb;
+  const searching = query.trim().length > 0;
+
   return (
     <div className="app">
-      <SearchBar query={query} results={searchResults} onQueryChange={setQuery} onSubmit={submitSearch} onPick={openUrl} />
-      <Breadcrumb crumbs={view.breadcrumb} onGo={(id) => navigate(id, HOME_TAB_ID, true)} />
-      <TabBar tabs={view.tabs} activeTabId={view.activeTabId} onSelect={(id) => navigate(view.folderId, id, true)} />
-      {view.items.length === 0 ? (
-        <EmptyState onAdd={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })} />
+      <div className="topbar">
+        <SearchBar query={query} onQueryChange={setQuery} onSubmit={submitSearch} />
+        <button className="icon-btn" title="设置" onClick={openOptions}>⚙</button>
+      </div>
+
+      {searching ? (
+        <>
+          <p className="search-header">搜索结果：{searchResults.length} 个匹配「{query.trim()}」</p>
+          {searchResults.length === 0 ? (
+            <div className="empty"><p>没有匹配的书签</p></div>
+          ) : (
+            <div className="grid" style={{ ['--cols']: String(settings.columns) } as React.CSSProperties}>
+              {searchResults.map((b) => (
+                <div className="grid__cell" key={b.id}>
+                  <Tile id={b.id} title={b.title} url={b.url} thumbnail={thumbnails[b.url]} tileStyle={settings.tileStyle} onOpen={openUrl} onContextMenu={openContextMenu} />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       ) : (
-        <Grid
-          items={view.items}
-          columns={settings.columns}
-          thumbnails={thumbnails}
-          tileStyle={settings.tileStyle}
-          onOpen={openUrl}
-          onEnter={(id) => navigate(id, HOME_TAB_ID, true)}
-          onContextMenu={openContextMenu}
-          onReorder={handleReorder}
-          onMoveInto={handleMoveInto}
-        />
+        <>
+          <Breadcrumb crumbs={crumbs} onGo={(id) => navigate(id, HOME_TAB_ID, true)} />
+          <TabBar tabs={view.tabs} activeTabId={view.activeTabId} onSelect={(id) => navigate(view.folderId, id, true)} />
+          {view.items.length === 0 ? (
+            <EmptyState onAdd={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })} />
+          ) : (
+            <Grid
+              items={view.items}
+              columns={settings.columns}
+              thumbnails={thumbnails}
+              tileStyle={settings.tileStyle}
+              onOpen={openUrl}
+              onEnter={(id) => navigate(id, HOME_TAB_ID, true)}
+              onContextMenu={openContextMenu}
+              onReorder={handleReorder}
+              onMoveInto={handleMoveInto}
+            />
+          )}
+        </>
       )}
+
       <div className="fab-group">
         <button className="fab fab--secondary" title="新增文件夹" onClick={() => setDialog({ mode: 'create-folder', initial: { title: '' } })}>📁</button>
         <button className="fab" title="新增书签" onClick={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })}>＋</button>

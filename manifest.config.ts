@@ -15,6 +15,7 @@ export default defineManifest({
   permissions: ['bookmarks', 'storage', 'favicon'],
   optional_permissions: ['tabs'],
   optional_host_permissions: ['<all_urls>'],
+  action: { default_title: 'Real Speed Dial 设置' },
   background: { service_worker: 'src/background/service-worker.ts', type: 'module' },
   chrome_url_overrides: { newtab: 'src/newtab/index.html' },
   options_page: 'src/options/index.html',
