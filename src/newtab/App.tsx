@@ -9,6 +9,8 @@ import { Grid } from './components/Grid';
 import { Breadcrumb } from './components/Breadcrumb';
 import { EmptyState } from './components/EmptyState';
 import { Guidance } from './components/Guidance';
+import { EditDialog, type EditMode } from './components/EditDialog';
+import { createBookmark, updateBookmark } from '@/lib/bookmarks';
 import './styles.css';
 
 export default function App() {
@@ -60,6 +62,17 @@ export default function App() {
 
   const openOptions = useCallback(() => chrome.runtime.openOptionsPage(), []);
 
+  const [dialog, setDialog] = useState<{ mode: EditMode; targetId?: string; initial: { title: string; url?: string } } | null>(null);
+
+  const submitDialog = useCallback(async (data: { title: string; url?: string }) => {
+    if (!dialog || folderId === null) return;
+    if (dialog.mode === 'create-bookmark') await createBookmark(folderId, data.title, data.url);
+    else if (dialog.mode === 'create-folder') await createBookmark(folderId, data.title);
+    else if (dialog.mode === 'edit-bookmark' && dialog.targetId) await updateBookmark(dialog.targetId, { title: data.title, url: data.url });
+    else if (dialog.mode === 'rename-folder' && dialog.targetId) await updateBookmark(dialog.targetId, { title: data.title });
+    setDialog(null);
+  }, [dialog, folderId]);
+
   if (!settings || loading) return <div className="loading" />;
   if (!rootId) return <Guidance onOpenOptions={openOptions} />;
   if (!view) return <div className="loading" />;
@@ -69,7 +82,7 @@ export default function App() {
       <Breadcrumb crumbs={view.breadcrumb} onGo={(id) => navigate(id, HOME_TAB_ID, true)} />
       <TabBar tabs={view.tabs} activeTabId={view.activeTabId} onSelect={(id) => navigate(view.folderId, id, true)} />
       {view.items.length === 0 ? (
-        <EmptyState onAdd={() => openOptions()} />
+        <EmptyState onAdd={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })} />
       ) : (
         <Grid
           items={view.items}
@@ -80,6 +93,8 @@ export default function App() {
           onContextMenu={() => {}}
         />
       )}
+      <button className="fab" onClick={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })}>＋</button>
+      {dialog && <EditDialog mode={dialog.mode} initial={dialog.initial} onSubmit={submitDialog} onCancel={() => setDialog(null)} />}
     </div>
   );
 }
