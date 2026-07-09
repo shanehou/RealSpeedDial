@@ -3,6 +3,7 @@ import { useSettings } from './hooks/useSettings';
 import { useBookmarkTree } from './hooks/useBookmarkTree';
 import { useNavState } from './hooks/useNavState';
 import { buildFolderView } from '@/lib/mapping';
+import { resolveInitialNav } from '@/lib/navState';
 import { HOME_TAB_ID } from '@/lib/constants';
 import { TabBar } from './components/TabBar';
 import { Grid } from './components/Grid';
@@ -24,16 +25,14 @@ export default function App() {
   const [folderId, setFolderId] = useState<string | null>(null);
   const [tabId, setTabId] = useState<string>(HOME_TAB_ID);
 
-  // 初始化：优先恢复 navState（若开启且有效），否则用根
+  // 初始化：优先恢复 navState（若开启且仍有效），否则优雅回退到根；失效目录/Tab 不会白屏
   useEffect(() => {
     if (!root || !ready || folderId !== null) return;
-    const restored = settings?.restoreLastPosition ? navState : null;
-    const initialFolder = restored?.currentFolderId ?? root.id;
-    const initialTab = restored?.selectedTabId ?? HOME_TAB_ID;
-    setFolderId(initialFolder);
-    setTabId(initialTab);
+    const init = resolveInitialNav(root, navState, settings?.restoreLastPosition ?? true);
+    setFolderId(init.currentFolderId);
+    setTabId(init.selectedTabId);
     // 播种基础 history 条目，使首次按下浏览器后退键即可从当前位置正确回退
-    history.replaceState({ folderId: initialFolder, tabId: initialTab }, '');
+    history.replaceState({ folderId: init.currentFolderId, tabId: init.selectedTabId }, '');
   }, [root, ready, navState, settings, folderId]);
 
   const view = useMemo(() => {
