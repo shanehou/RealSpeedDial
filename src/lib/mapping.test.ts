@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isFolder, getBookmarks, getSubfolders, findNode, getAncestors, buildTabs, resolveActiveTabId } from './mapping';
+import { isFolder, getBookmarks, getSubfolders, findNode, getAncestors, buildTabs, resolveActiveTabId, buildItems } from './mapping';
 import { HOME_TAB_ID } from './constants';
 import type { BookmarkNode } from '@/types';
 
@@ -66,5 +66,27 @@ describe('resolveActiveTabId', () => {
   });
   it('returns empty string when no tabs', () => {
     expect(resolveActiveTabId({ id: 'e', title: 'E', children: [] }, undefined)).toBe('');
+  });
+});
+
+describe('buildItems', () => {
+  it('Home tab shows only the folder direct bookmarks (folders are tabs, not tiles)', () => {
+    const items = buildItems(tree, HOME_TAB_ID);
+    expect(items).toEqual([
+      { kind: 'bookmark', id: 'b1', title: 'GitHub', url: 'https://github.com', index: 0 },
+    ]);
+  });
+  it('subfolder tab shows that subfolder bookmarks + its subfolders as folder tiles', () => {
+    const items = buildItems(tree, 'f1');
+    expect(items[0]).toEqual({ kind: 'bookmark', id: 'b2', title: 'Jira', url: 'https://jira.com', index: 0 });
+    expect(items[1]).toMatchObject({ kind: 'folder', id: 'f2', title: '后端', index: 1 });
+  });
+  it('folder tile childrenPreview collects up to 4 descendant bookmark urls', () => {
+    const items = buildItems(tree, 'f1');
+    const folder = items[1] as { childrenPreview: string[] };
+    expect(folder.childrenPreview).toEqual(['https://mysql.com']);
+  });
+  it('returns empty for unknown tab', () => {
+    expect(buildItems(tree, 'zzz')).toEqual([]);
   });
 });

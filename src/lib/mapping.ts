@@ -1,5 +1,5 @@
-import { HOME_TAB_ID } from './constants';
-import type { BookmarkNode, TabModel } from '@/types';
+import { HOME_TAB_ID, FOLDER_PREVIEW_COUNT } from './constants';
+import type { BookmarkNode, TabModel, SpeedDialItem, SpeedDialBookmark, SpeedDialFolder } from '@/types';
 
 export function isFolder(node: BookmarkNode): boolean {
   return node.url === undefined;
@@ -52,4 +52,46 @@ export function resolveActiveTabId(folder: BookmarkNode, requested?: string): st
   if (tabs.length === 0) return '';
   if (requested && tabs.some((t) => t.id === requested)) return requested;
   return tabs[0].id;
+}
+
+function toBookmarkItem(node: BookmarkNode): SpeedDialBookmark {
+  return { kind: 'bookmark', id: node.id, title: node.title, url: node.url!, index: node.index ?? 0 };
+}
+
+function collectPreviewUrls(folder: BookmarkNode, limit: number): string[] {
+  const urls: string[] = [];
+  const walk = (n: BookmarkNode) => {
+    for (const c of n.children ?? []) {
+      if (urls.length >= limit) return;
+      if (c.url) urls.push(c.url);
+    }
+    for (const c of n.children ?? []) {
+      if (urls.length >= limit) return;
+      if (!c.url) walk(c);
+    }
+  };
+  walk(folder);
+  return urls.slice(0, limit);
+}
+
+function toFolderItem(node: BookmarkNode): SpeedDialFolder {
+  return {
+    kind: 'folder',
+    id: node.id,
+    title: node.title,
+    index: node.index ?? 0,
+    childrenPreview: collectPreviewUrls(node, FOLDER_PREVIEW_COUNT),
+  };
+}
+
+export function buildItems(folder: BookmarkNode, activeTabId: string): SpeedDialItem[] {
+  if (activeTabId === HOME_TAB_ID) {
+    return getBookmarks(folder).map(toBookmarkItem);
+  }
+  const sub = (folder.children ?? []).find((c) => c.id === activeTabId && c.url === undefined);
+  if (!sub) return [];
+  return [
+    ...getBookmarks(sub).map(toBookmarkItem),
+    ...getSubfolders(sub).map(toFolderItem),
+  ];
 }
