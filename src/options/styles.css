@@ -1,0 +1,11 @@
+body { margin: 0; font-family: system-ui, "PingFang SC", sans-serif; background: #f6f7f9; color: #1c1e21; }
+.options { max-width: 720px; margin: 0 auto; padding: 32px 24px; }
+h1 { font-size: 22px; }
+section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+h2 { font-size: 16px; margin-top: 0; }
+.hint { color: #65676b; font-size: 13px; }
+.field { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #eee; }
+.folder-tree { max-height: 300px; overflow: auto; border: 1px solid #e4e6eb; border-radius: 8px; }
+.folder-row { display: block; width: 100%; text-align: left; border: none; background: none; padding: 6px 8px; cursor: pointer; font-size: 14px; }
+.folder-row:hover { background: #f0f2f5; }
+.folder-row--selected { background: #e7f0ff; color: #1a73e8; }
