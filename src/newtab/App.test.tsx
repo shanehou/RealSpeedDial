@@ -38,7 +38,7 @@ describe('App navigation', () => {
     render(<App />);
     await screen.findByRole('tab', { name: '工作' });
     await userEvent.click(screen.getByRole('tab', { name: '工作' }));
-    await userEvent.click(await screen.findByRole('button', { name: /📁 后端/ }));
+    await userEvent.click(await screen.findByText(/📁 后端/));
     await waitFor(() => expect(screen.getByText('MySQL')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: '根' })).toBeInTheDocument();
   });
@@ -46,7 +46,7 @@ describe('App navigation', () => {
     render(<App />);
     await screen.findByRole('tab', { name: '工作' });
     await userEvent.click(screen.getByRole('tab', { name: '工作' }));
-    await userEvent.click(await screen.findByRole('button', { name: /📁 后端/ }));
+    await userEvent.click(await screen.findByText(/📁 后端/));
     await waitFor(() => expect(screen.getByText('MySQL')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: '根' })).toBeInTheDocument();
 

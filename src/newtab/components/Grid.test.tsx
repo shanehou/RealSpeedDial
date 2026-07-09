@@ -17,9 +17,11 @@ describe('Grid', () => {
   it('renders bookmarks and folders, wires callbacks', async () => {
     const onOpen = vi.fn();
     const onEnter = vi.fn();
-    render(<Grid items={items} columns={6} thumbnails={{}} onOpen={onOpen} onEnter={onEnter} onContextMenu={() => {}} />);
-    await userEvent.click(screen.getByRole('button', { name: /GitHub/ }));
-    await userEvent.click(screen.getByRole('button', { name: /工作/ }));
+    render(<Grid items={items} columns={6} thumbnails={{}} onOpen={onOpen} onEnter={onEnter} onContextMenu={() => {}} onReorder={() => {}} onMoveInto={() => {}} />);
+    // dnd-kit 的 useSortable 会给每个磁贴外层 div 加 role="button"，与内层 <button> 同名，
+    // 故按可访问文本定位内层按钮标签，避免 getByRole 命中多个元素。
+    await userEvent.click(screen.getByText('GitHub'));
+    await userEvent.click(screen.getByText(/工作/));
     expect(onOpen).toHaveBeenCalledWith('https://github.com');
     expect(onEnter).toHaveBeenCalledWith('f');
   });

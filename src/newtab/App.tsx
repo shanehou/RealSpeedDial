@@ -11,7 +11,8 @@ import { EmptyState } from './components/EmptyState';
 import { Guidance } from './components/Guidance';
 import { EditDialog, type EditMode } from './components/EditDialog';
 import { ContextMenu, type MenuAction } from './components/ContextMenu';
-import { createBookmark, updateBookmark, removeBookmark, removeFolder } from '@/lib/bookmarks';
+import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookmark } from '@/lib/bookmarks';
+import { computeMoveIndex } from '@/lib/reorder';
 import './styles.css';
 
 export default function App() {
@@ -98,6 +99,17 @@ export default function App() {
     setMenu(null);
   }, [menu, view]);
 
+  const handleReorder = useCallback(async (activeId: string, from: number, to: number) => {
+    if (folderId === null) return;
+    // 目标父目录：当前激活 Tab 对应的文件夹（主页则为当前文件夹）
+    const parentId = tabId === HOME_TAB_ID ? folderId : tabId;
+    await moveBookmark(activeId, { parentId, index: computeMoveIndex(from, to) });
+  }, [folderId, tabId]);
+
+  const handleMoveInto = useCallback(async (activeId: string, targetFolderId: string) => {
+    await moveBookmark(activeId, { parentId: targetFolderId });
+  }, []);
+
   if (!settings || loading) return <div className="loading" />;
   if (!rootId) return <Guidance onOpenOptions={openOptions} />;
   if (!view) return <div className="loading" />;
@@ -116,6 +128,8 @@ export default function App() {
           onOpen={openUrl}
           onEnter={(id) => navigate(id, HOME_TAB_ID, true)}
           onContextMenu={openContextMenu}
+          onReorder={handleReorder}
+          onMoveInto={handleMoveInto}
         />
       )}
       <button className="fab" onClick={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })}>＋</button>
