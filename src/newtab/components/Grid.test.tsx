@@ -33,10 +33,12 @@ describe('Breadcrumb', () => {
     await userEvent.click(screen.getByRole('button', { name: '根' }));
     expect(onGo).toHaveBeenCalledWith('root');
   });
-  it('renders a single crumb as current (non-clickable)', () => {
-    render(<Breadcrumb crumbs={[{ id: 'root', title: '根' }]} onGo={() => {}} />);
-    expect(screen.getByText('根')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '根' })).not.toBeInTheDocument();
+  it('renders a single root crumb as a clickable home button', async () => {
+    const onGo = vi.fn();
+    render(<Breadcrumb crumbs={[{ id: 'root', title: '根' }]} onGo={onGo} />);
+    const home = screen.getByRole('button', { name: /根/ });
+    await userEvent.click(home);
+    expect(onGo).toHaveBeenCalledWith('root');
   });
   it('renders nothing when no crumbs', () => {
     const { container } = render(<Breadcrumb crumbs={[]} onGo={() => {}} />);

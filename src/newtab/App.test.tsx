@@ -55,7 +55,8 @@ describe('App navigation', () => {
     });
 
     await waitFor(() => expect(screen.getByText('GitHub')).toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: /根/ })).not.toBeInTheDocument();
+    // 已回到根首页：深层的「后端」文件夹磁贴不再显示
+    expect(screen.queryByText('后端')).not.toBeInTheDocument();
   });
   it('shows guidance when no root selected', async () => {
     await c.storage.sync.set({ [SETTINGS_KEY]: { rootFolderId: null } });
