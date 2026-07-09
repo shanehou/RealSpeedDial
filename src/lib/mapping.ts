@@ -1,5 +1,5 @@
 import { HOME_TAB_ID, FOLDER_PREVIEW_COUNT } from './constants';
-import type { BookmarkNode, TabModel, SpeedDialItem, SpeedDialBookmark, SpeedDialFolder } from '@/types';
+import type { BookmarkNode, TabModel, SpeedDialItem, SpeedDialBookmark, SpeedDialFolder, FolderView, Crumb } from '@/types';
 
 export function isFolder(node: BookmarkNode): boolean {
   return node.url === undefined;
@@ -94,4 +94,13 @@ export function buildItems(folder: BookmarkNode, activeTabId: string): SpeedDial
     ...getBookmarks(sub).map(toBookmarkItem),
     ...getSubfolders(sub).map(toFolderItem),
   ];
+}
+
+export function buildFolderView(root: BookmarkNode, folderId: string, requestedTabId?: string): FolderView {
+  const folder = findNode(root, folderId) ?? root;
+  const tabs = buildTabs(folder);
+  const activeTabId = resolveActiveTabId(folder, requestedTabId);
+  const items = buildItems(folder, activeTabId);
+  const breadcrumb: Crumb[] = getAncestors(root, folder.id).map((n) => ({ id: n.id, title: n.title }));
+  return { folderId: folder.id, tabs, activeTabId, items, breadcrumb };
 }

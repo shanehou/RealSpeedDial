@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isFolder, getBookmarks, getSubfolders, findNode, getAncestors, buildTabs, resolveActiveTabId, buildItems } from './mapping';
+import { isFolder, getBookmarks, getSubfolders, findNode, getAncestors, buildTabs, resolveActiveTabId, buildItems, buildFolderView } from './mapping';
 import { HOME_TAB_ID } from './constants';
 import type { BookmarkNode } from '@/types';
 
@@ -88,5 +88,26 @@ describe('buildItems', () => {
   });
   it('returns empty for unknown tab', () => {
     expect(buildItems(tree, 'zzz')).toEqual([]);
+  });
+});
+
+describe('buildFolderView', () => {
+  it('composes tabs, items, breadcrumb for root', () => {
+    const view = buildFolderView(tree, 'root');
+    expect(view.folderId).toBe('root');
+    expect(view.activeTabId).toBe(HOME_TAB_ID);
+    expect(view.tabs.map((t) => t.id)).toEqual([HOME_TAB_ID, 'f1']);
+    expect(view.items.map((i) => i.id)).toEqual(['b1']);
+    expect(view.breadcrumb.map((c) => c.id)).toEqual(['root']);
+  });
+  it('drills into a deep folder as recursion root', () => {
+    const view = buildFolderView(tree, 'f2', HOME_TAB_ID);
+    expect(view.folderId).toBe('f2');
+    expect(view.items.map((i) => i.id)).toEqual(['b3']);
+    expect(view.breadcrumb.map((c) => c.id)).toEqual(['root', 'f1', 'f2']);
+  });
+  it('falls back to root when folderId missing', () => {
+    const view = buildFolderView(tree, 'gone');
+    expect(view.folderId).toBe('root');
   });
 });
