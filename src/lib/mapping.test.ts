@@ -86,6 +86,32 @@ describe('buildItems', () => {
     const folder = items[1] as { childrenPreview: string[] };
     expect(folder.childrenPreview).toEqual(['https://mysql.com']);
   });
+  it('folder tile childrenPreview caps at 4 and lists direct bookmarks before nested ones', () => {
+    const parent: BookmarkNode = { id: 'p', title: 'P', children: [
+      { id: 'active', title: 'Active', index: 0, children: [
+        { id: 'tile', title: 'Tile', index: 0, children: [
+          // 含书签的子目录故意排在最前：验证直链书签优先于向子目录递归
+          { id: 'nf', title: 'Nested', index: 0, children: [
+            { id: 'n1', title: 'N1', url: 'https://n1.com', index: 0 },
+            { id: 'deep', title: 'Deep', index: 1, children: [
+              { id: 'n2', title: 'N2', url: 'https://n2.com', index: 0 },
+              { id: 'n3', title: 'N3', url: 'https://n3.com', index: 1 },
+            ] },
+          ] },
+          { id: 'd1', title: 'D1', url: 'https://d1.com', index: 1 },
+          { id: 'd2', title: 'D2', url: 'https://d2.com', index: 2 },
+          { id: 'd3', title: 'D3', url: 'https://d3.com', index: 3 },
+          { id: 'd4', title: 'D4', url: 'https://d4.com', index: 4 },
+        ] },
+      ] },
+    ] };
+    const items = buildItems(parent, 'active');
+    const folder = items[0] as { childrenPreview: string[] };
+    expect(folder.childrenPreview.length).toBe(4);
+    expect(folder.childrenPreview).toEqual([
+      'https://d1.com', 'https://d2.com', 'https://d3.com', 'https://d4.com',
+    ]);
+  });
   it('returns empty for unknown tab', () => {
     expect(buildItems(tree, 'zzz')).toEqual([]);
   });
