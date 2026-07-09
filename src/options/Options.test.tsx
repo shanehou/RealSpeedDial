@@ -32,4 +32,12 @@ describe('Options', () => {
       expect((got[SETTINGS_KEY] as { tileStyle: string }).tileStyle).toBe('themeColor');
     });
   });
+
+  it('shows confirmation with folder name and opens a preview tab after selecting root', async () => {
+    render(<Options />);
+    await userEvent.click(await screen.findByRole('button', { name: '工作' }));
+    expect(await screen.findByText(/当前首页目录/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '打开新标签页查看效果' }));
+    expect(c.tabs.create).toHaveBeenCalled();
+  });
 });

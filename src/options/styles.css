@@ -9,3 +9,8 @@ h2 { font-size: 16px; margin-top: 0; }
 .folder-row { display: block; width: 100%; text-align: left; border: none; background: none; padding: 6px 8px; cursor: pointer; font-size: 14px; }
 .folder-row:hover { background: #f0f2f5; }
 .folder-row--selected { background: #e7f0ff; color: #1a73e8; }
+.btn { padding: 8px 14px; border: none; border-radius: 8px; background: #eaecef; color: #1c1e21; cursor: pointer; font-size: 14px; }
+.btn--primary { background: #1a73e8; color: #fff; }
+.confirm { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 10px 12px; background: #e6f4ea; color: #137333; border-radius: 8px; font-size: 14px; }
+.warn { margin-top: 12px; padding: 10px 12px; background: #fef7e0; color: #a56300; border-radius: 8px; font-size: 13px; }
+.saved-badge { font-size: 13px; color: #137333; background: #e6f4ea; padding: 2px 10px; border-radius: 999px; vertical-align: middle; margin-left: 8px; }
