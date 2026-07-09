@@ -12,7 +12,7 @@ import { Guidance } from './components/Guidance';
 import { EditDialog, type EditMode } from './components/EditDialog';
 import { ContextMenu, type MenuAction } from './components/ContextMenu';
 import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookmark } from '@/lib/bookmarks';
-import { computeMoveIndex } from '@/lib/reorder';
+import { resolveMoveIndex } from '@/lib/reorder';
 import './styles.css';
 
 export default function App() {
@@ -93,18 +93,19 @@ export default function App() {
       if (item.kind === 'bookmark') setDialog({ mode: 'edit-bookmark', targetId: item.id, initial: { title: item.title, url: item.url } });
       else setDialog({ mode: 'rename-folder', targetId: item.id, initial: { title: item.title } });
     } else if (a === 'open-new-tab' && item.kind === 'bookmark') {
-      window.open(item.url, '_blank');
+      window.open(item.url, '_blank', 'noopener');
     }
     // 'refresh-thumb' 在 Phase 8 接入
     setMenu(null);
   }, [menu, view]);
 
   const handleReorder = useCallback(async (activeId: string, from: number, to: number) => {
-    if (folderId === null) return;
+    if (folderId === null || !view) return;
     // 目标父目录：当前激活 Tab 对应的文件夹（主页则为当前文件夹）
     const parentId = tabId === HOME_TAB_ID ? folderId : tabId;
-    await moveBookmark(activeId, { parentId, index: computeMoveIndex(from, to) });
-  }, [folderId, tabId]);
+    // 用每项真实 index 换算，避免混排目录里显示位置≠存储索引导致错位
+    await moveBookmark(activeId, { parentId, index: resolveMoveIndex(view.items, from, to) });
+  }, [folderId, tabId, view]);
 
   const handleMoveInto = useCallback(async (activeId: string, targetFolderId: string) => {
     await moveBookmark(activeId, { parentId: targetFolderId });

@@ -1,5 +1,5 @@
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { SpeedDialItem } from '@/types';
 import { Tile } from './Tile';
@@ -17,9 +17,16 @@ interface Props {
 }
 
 function SortableCell({ item, children }: { item: SpeedDialItem; children: React.ReactNode }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  // 只铺 listeners（指针拖拽）；不铺 attributes，避免包裹 div 被加上 role="button"/tabIndex
+  // 而与内层磁贴 <button> 形成嵌套可交互元素（无 KeyboardSensor，attributes 也无收益）。
+  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      className="grid__cell"
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+      {...listeners}
+    >
       {children}
     </div>
   );
@@ -57,4 +64,3 @@ export function Grid({ items, columns, thumbnails, onOpen, onEnter, onContextMen
     </DndContext>
   );
 }
-export { arrayMove };
