@@ -11,9 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["chrome-extension", "speed-dial", "bookmarks", "new-tab"],
+  "author": "shanehou",
+  "license": "MIT",
   "dependencies": {
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
