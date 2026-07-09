@@ -1,7 +1,7 @@
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { SpeedDialItem } from '@/types';
+import type { SpeedDialItem, TileStyle } from '@/types';
 import { Tile } from './Tile';
 import { FolderTile } from './FolderTile';
 
@@ -9,6 +9,7 @@ interface Props {
   items: SpeedDialItem[];
   columns: number;
   thumbnails: Record<string, string>;
+  tileStyle: TileStyle;
   onOpen: (url: string) => void;
   onEnter: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, id: string) => void;
@@ -32,7 +33,7 @@ function SortableCell({ item, children }: { item: SpeedDialItem; children: React
   );
 }
 
-export function Grid({ items, columns, thumbnails, onOpen, onEnter, onContextMenu, onReorder, onMoveInto }: Props) {
+export function Grid({ items, columns, thumbnails, tileStyle, onOpen, onEnter, onContextMenu, onReorder, onMoveInto }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const handleDragEnd = (e: DragEndEvent) => {
@@ -53,7 +54,7 @@ export function Grid({ items, columns, thumbnails, onOpen, onEnter, onContextMen
           {items.map((it) => (
             <SortableCell key={it.id} item={it}>
               {it.kind === 'bookmark' ? (
-                <Tile id={it.id} title={it.title} url={it.url} thumbnail={thumbnails[it.url]} onOpen={onOpen} onContextMenu={onContextMenu} />
+                <Tile id={it.id} title={it.title} url={it.url} thumbnail={thumbnails[it.url]} tileStyle={tileStyle} onOpen={onOpen} onContextMenu={onContextMenu} />
               ) : (
                 <FolderTile id={it.id} title={it.title} preview={it.childrenPreview} onEnter={onEnter} onContextMenu={onContextMenu} />
               )}

@@ -48,6 +48,18 @@ describe('Tile', () => {
     expect(letter).toBeInTheDocument();
     expect(letter).toHaveClass('tile__letter');
   });
+
+  it('applies a theme-color gradient background in themeColor style without a thumbnail', () => {
+    render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="themeColor" onOpen={() => {}} onContextMenu={() => {}} />);
+    const btn = screen.getByRole('button', { name: /GitHub/ });
+    expect(btn.getAttribute('style')).toContain('linear-gradient');
+  });
+
+  it('does not add a gradient in favicon style', () => {
+    render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="favicon" onOpen={() => {}} onContextMenu={() => {}} />);
+    const btn = screen.getByRole('button', { name: /GitHub/ });
+    expect(btn.getAttribute('style') ?? '').not.toContain('linear-gradient');
+  });
 });
 
 describe('FolderTile', () => {

@@ -17,7 +17,7 @@ describe('Grid', () => {
   it('renders bookmarks and folders, wires callbacks', async () => {
     const onOpen = vi.fn();
     const onEnter = vi.fn();
-    render(<Grid items={items} columns={6} thumbnails={{}} onOpen={onOpen} onEnter={onEnter} onContextMenu={() => {}} onReorder={() => {}} onMoveInto={() => {}} />);
+    render(<Grid items={items} columns={6} thumbnails={{}} tileStyle="favicon" onOpen={onOpen} onEnter={onEnter} onContextMenu={() => {}} onReorder={() => {}} onMoveInto={() => {}} />);
     // 磁贴外层 dnd 包裹 div 仅铺 listeners（不再带 role="button"）；按标签文本定位磁贴。
     await userEvent.click(screen.getByText('GitHub'));
     await userEvent.click(screen.getByText(/工作/));

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSettings } from './hooks/useSettings';
 import { useBookmarkTree } from './hooks/useBookmarkTree';
 import { useNavState } from './hooks/useNavState';
+import { useThumbnails } from './hooks/useThumbnails';
 import { buildFolderView } from '@/lib/mapping';
 import { resolveInitialNav } from '@/lib/navState';
 import { HOME_TAB_ID } from '@/lib/constants';
@@ -39,6 +40,12 @@ export default function App() {
     if (!root || folderId === null) return null;
     return buildFolderView(root, folderId, tabId);
   }, [root, folderId, tabId]);
+
+  const bookmarkUrls = useMemo(
+    () => view?.items.flatMap((i) => (i.kind === 'bookmark' ? [i.url] : [])) ?? [],
+    [view],
+  );
+  const thumbnails = useThumbnails(bookmarkUrls, settings?.tileStyle ?? 'favicon');
 
   const navigate = useCallback((nextFolderId: string, nextTabId: string, push: boolean) => {
     setFolderId(nextFolderId);
@@ -124,7 +131,8 @@ export default function App() {
         <Grid
           items={view.items}
           columns={settings.columns}
-          thumbnails={{}}
+          thumbnails={thumbnails}
+          tileStyle={settings.tileStyle}
           onOpen={openUrl}
           onEnter={(id) => navigate(id, HOME_TAB_ID, true)}
           onContextMenu={openContextMenu}
