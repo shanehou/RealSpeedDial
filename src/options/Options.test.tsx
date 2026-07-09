@@ -36,8 +36,14 @@ describe('Options', () => {
   it('shows confirmation with folder name and opens a preview tab after selecting root', async () => {
     render(<Options />);
     await userEvent.click(await screen.findByRole('button', { name: '工作' }));
-    expect(await screen.findByText(/当前首页目录/)).toBeInTheDocument();
+    expect(await screen.findByText(/当前默认目录/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '打开新标签页查看效果' }));
     expect(c.tabs.create).toHaveBeenCalled();
+  });
+
+  it('switches UI language to English when language=en', async () => {
+    await c.storage.sync.set({ [SETTINGS_KEY]: { rootFolderId: null, language: 'en' } });
+    render(<Options />);
+    expect(await screen.findByText('Real Speed Dial Settings')).toBeInTheDocument();
   });
 });
