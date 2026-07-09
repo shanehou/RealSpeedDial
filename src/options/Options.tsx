@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getTree } from '@/lib/bookmarks';
 import { loadSettings, saveSettings } from '@/lib/settings';
 import { findNode } from '@/lib/mapping';
+import { ensureCapturePermission } from '@/lib/permissions';
 import type { BookmarkNode, Settings, TileStyle } from '@/types';
 import { FolderTreeSelect } from './components/FolderTreeSelect';
 import './styles.css';
@@ -49,7 +50,18 @@ export default function Options() {
         <h2>外观</h2>
         <label className="field">
           <span>磁贴样式</span>
-          <select aria-label="磁贴样式" value={settings.tileStyle} onChange={(e) => void patch({ tileStyle: e.target.value as TileStyle })}>
+          <select
+            aria-label="磁贴样式"
+            value={settings.tileStyle}
+            onChange={async (e) => {
+              const style = e.target.value as TileStyle;
+              if (style === 'screenshot' && !(await ensureCapturePermission())) {
+                alert('未授予截图所需权限，已保持当前样式');
+                return;
+              }
+              await patch({ tileStyle: style });
+            }}
+          >
             <option value="favicon">图标 + 标题</option>
             <option value="themeColor">主题色背景</option>
             <option value="screenshot">网页截图</option>

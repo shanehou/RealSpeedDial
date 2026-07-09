@@ -17,6 +17,7 @@ import { SearchBar } from './components/SearchBar';
 import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookmark } from '@/lib/bookmarks';
 import { resolveMoveIndex } from '@/lib/reorder';
 import { filterBookmarks, buildSearchUrl } from '@/lib/search';
+import { ensureCapturePermission } from '@/lib/permissions';
 import './styles.css';
 
 export default function App() {
@@ -109,8 +110,11 @@ export default function App() {
       else setDialog({ mode: 'rename-folder', targetId: item.id, initial: { title: item.title } });
     } else if (a === 'open-new-tab' && item.kind === 'bookmark') {
       window.open(item.url, '_blank', 'noopener');
+    } else if (a === 'refresh-thumb' && item.kind === 'bookmark') {
+      if (await ensureCapturePermission()) {
+        chrome.runtime.sendMessage({ type: 'capture-url', url: item.url });
+      }
     }
-    // 'refresh-thumb' 在 Phase 8 接入
     setMenu(null);
   }, [menu, view]);
 
