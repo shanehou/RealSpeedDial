@@ -1,0 +1,9 @@
+export const HOME_TAB_ID = '__home__';
+export const SETTINGS_KEY = 'settings';
+export const NAV_STATE_KEY = 'navState';
+export const THUMB_DB_NAME = 'rsd-db';
+export const THUMB_DB_VERSION = 1;
+export const THUMB_STORE = 'thumbnails';
+export const ASSET_STORE = 'assets';
+export const WALLPAPER_KEY = 'wallpaper';
+export const FOLDER_PREVIEW_COUNT = 4;
