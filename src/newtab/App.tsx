@@ -171,9 +171,6 @@ export default function App() {
   if (!rootId) return <Guidance onOpenOptions={openOptions} />;
   if (!view) return <div className="loading" />;
 
-  // 面包屑始终可见：到当前文件夹的路径；若当前激活的是子目录 Tab，则追加它作为当前层
-  const activeTab = tabId !== HOME_TAB_ID ? view.tabs.find((t) => t.id === tabId) : undefined;
-  const crumbs = activeTab ? [...view.breadcrumb, { id: activeTab.id, title: activeTab.title }] : view.breadcrumb;
   const searching = query.trim().length > 0;
 
   return (
@@ -207,7 +204,7 @@ export default function App() {
         </>
       ) : (
         <>
-          <Breadcrumb crumbs={crumbs} onGo={(id) => navigate(id, HOME_TAB_ID, true)} />
+          <Breadcrumb crumbs={view.breadcrumb} onGo={(id) => navigate(id, HOME_TAB_ID, true)} />
           <TabBar tabs={view.tabs} activeTabId={view.activeTabId} onSelect={(id) => navigate(view.folderId, id, true)} />
           {view.items.length === 0 ? (
             <EmptyState onAdd={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })} />
