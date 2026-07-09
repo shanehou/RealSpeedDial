@@ -3,7 +3,8 @@ import { getThumbnail } from '@/lib/thumbnails';
 import type { TileStyle } from '@/types';
 
 // 仅在「网页截图」样式下从 IndexedDB 读取缩略图；其他样式返回空表（走 favicon/主题色）。
-export function useThumbnails(urls: string[], style: TileStyle): Record<string, string> {
+// refreshKey 变化时强制重读（用于手动刷新缩略图后即时更新，无需刷新页面）。
+export function useThumbnails(urls: string[], style: TileStyle, refreshKey = 0): Record<string, string> {
   const [map, setMap] = useState<Record<string, string>>({});
   const key = urls.join('|');
 
@@ -19,8 +20,8 @@ export function useThumbnails(urls: string[], style: TileStyle): Record<string, 
       if (!cancelled) setMap(next);
     })();
     return () => { cancelled = true; };
-    // key 代表 urls 内容；style 变化时重取
-  }, [key, style]); // eslint-disable-line react-hooks/exhaustive-deps
+    // key 代表 urls 内容；style / refreshKey 变化时重取
+  }, [key, style, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return map;
 }

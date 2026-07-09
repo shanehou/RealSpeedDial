@@ -23,7 +23,9 @@ body { margin: 0; font-family: system-ui, -apple-system, "PingFang SC", sans-ser
 .empty, .guidance { text-align: center; padding: 80px 0; color: #9aa4bf; }
 .btn { padding: 8px 16px; border: none; border-radius: 8px; background: #2a2e42; color: #e8eaed; cursor: pointer; }
 .btn--primary { background: #4a9eff; color: #fff; }
-.fab { position: fixed; right: 24px; bottom: 24px; width: 48px; height: 48px; border-radius: 50%; border: none; background: #4a9eff; color: #fff; font-size: 24px; cursor: pointer; }
+.fab-group { position: fixed; right: 24px; bottom: 24px; display: flex; flex-direction: column; gap: 12px; }
+.fab { width: 48px; height: 48px; border-radius: 50%; border: none; background: #4a9eff; color: #fff; font-size: 22px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+.fab--secondary { background: #2a2e42; font-size: 18px; }
 .dialog-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; }
 .dialog { background: #262a3d; padding: 20px; border-radius: 12px; width: 360px; }
 .dialog h3 { margin-top: 0; }

@@ -44,8 +44,13 @@ chrome.runtime.onMessage.addListener((msg: RsdMessage, _sender, sendResponse: (r
       } else if (msg.type === 'capture-url') {
         const tab = await chrome.tabs.create({ url: msg.url, active: true });
         await new Promise<void>((resolve) => {
+          const timer = setTimeout(() => { chrome.tabs.onUpdated.removeListener(listener); resolve(); }, 15000);
           const listener = (id: number, i: { status?: string }) => {
-            if (id === tab.id && i.status === 'complete') { chrome.tabs.onUpdated.removeListener(listener); resolve(); }
+            if (id === tab.id && i.status === 'complete') {
+              clearTimeout(timer);
+              chrome.tabs.onUpdated.removeListener(listener);
+              resolve();
+            }
           };
           chrome.tabs.onUpdated.addListener(listener);
         });

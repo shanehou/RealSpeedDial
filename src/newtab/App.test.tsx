@@ -62,4 +62,17 @@ describe('App navigation', () => {
     render(<App />);
     await waitFor(() => expect(screen.getByRole('button', { name: /选择目录/ })).toBeInTheDocument());
   });
+
+  it('adds a new bookmark into the active subfolder tab, not the parent home', async () => {
+    c.bookmarks.create.mockResolvedValue({ id: 'newb' });
+    render(<App />);
+    await screen.findByRole('tab', { name: '工作' });
+    await userEvent.click(screen.getByRole('tab', { name: '工作' }));
+    await waitFor(() => expect(screen.getByText('Jira')).toBeInTheDocument());
+    await userEvent.click(screen.getByTitle('新增书签'));
+    await userEvent.type(screen.getByLabelText('标题'), 'Wiki');
+    await userEvent.type(screen.getByLabelText('网址'), 'https://wiki.com');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => expect(c.bookmarks.create).toHaveBeenCalledWith({ parentId: 'f1', title: 'Wiki', url: 'https://wiki.com' }));
+  });
 });

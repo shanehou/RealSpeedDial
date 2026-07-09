@@ -19,7 +19,7 @@ import { resolveMoveIndex } from '@/lib/reorder';
 import { filterBookmarks, buildSearchUrl } from '@/lib/search';
 import { ensureCapturePermission } from '@/lib/permissions';
 import { resolveTheme } from '@/lib/theme';
-import { getAsset } from '@/lib/thumbnails';
+import { getAsset, deleteThumbnail } from '@/lib/thumbnails';
 import { WALLPAPER_KEY } from '@/lib/constants';
 import './styles.css';
 
@@ -51,7 +51,12 @@ export default function App() {
     () => view?.items.flatMap((i) => (i.kind === 'bookmark' ? [i.url] : [])) ?? [],
     [view],
   );
-  const thumbnails = useThumbnails(bookmarkUrls, settings?.tileStyle ?? 'favicon');
+  const [thumbRefresh, setThumbRefresh] = useState(0);
+  const thumbnails = useThumbnails(bookmarkUrls, settings?.tileStyle ?? 'favicon', thumbRefresh);
+
+  // 当前激活 Tab 对应的文件夹：主页 Tab → 当前文件夹；子目录 Tab → 该子目录。
+  // 新增/排序都应作用于「用户当前所见」的这个文件夹。
+  const activeFolderId = folderId !== null && tabId !== HOME_TAB_ID ? tabId : folderId;
 
   const navigate = useCallback((nextFolderId: string, nextTabId: string, push: boolean) => {
     setFolderId(nextFolderId);
@@ -74,18 +79,18 @@ export default function App() {
     if (!settings) return;
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true;
     document.documentElement.dataset.theme = resolveTheme(settings.theme, prefersDark);
+    let cancelled = false;
     let objectUrl: string | null = null;
     if (settings.background.type === 'color') {
       document.body.style.background = settings.background.value;
     } else {
       void getAsset(WALLPAPER_KEY).then((blob) => {
-        if (blob) {
-          objectUrl = URL.createObjectURL(blob);
-          document.body.style.background = `url(${objectUrl}) center/cover no-repeat fixed`;
-        }
+        if (cancelled || !blob) return;
+        objectUrl = URL.createObjectURL(blob);
+        document.body.style.background = `url(${objectUrl}) center/cover no-repeat fixed`;
       });
     }
-    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
+    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [settings]);
 
   const openUrl = useCallback((url: string) => {
@@ -105,13 +110,14 @@ export default function App() {
   const [dialog, setDialog] = useState<{ mode: EditMode; targetId?: string; initial: { title: string; url?: string } } | null>(null);
 
   const submitDialog = useCallback(async (data: { title: string; url?: string }) => {
-    if (!dialog || folderId === null) return;
-    if (dialog.mode === 'create-bookmark') await createBookmark(folderId, data.title, data.url);
-    else if (dialog.mode === 'create-folder') await createBookmark(folderId, data.title);
+    if (!dialog || activeFolderId === null) return;
+    // 新增写入「当前所见文件夹」（含子目录 Tab），与拖拽排序一致
+    if (dialog.mode === 'create-bookmark') await createBookmark(activeFolderId, data.title, data.url);
+    else if (dialog.mode === 'create-folder') await createBookmark(activeFolderId, data.title);
     else if (dialog.mode === 'edit-bookmark' && dialog.targetId) await updateBookmark(dialog.targetId, { title: data.title, url: data.url });
     else if (dialog.mode === 'rename-folder' && dialog.targetId) await updateBookmark(dialog.targetId, { title: data.title });
     setDialog(null);
-  }, [dialog, folderId]);
+  }, [dialog, activeFolderId]);
 
   const [menu, setMenu] = useState<{ x: number; y: number; id: string; isFolder: boolean } | null>(null);
 
@@ -126,7 +132,8 @@ export default function App() {
     const item = view.items.find((it) => it.id === menu.id);
     if (!item) { setMenu(null); return; }
     if (a === 'delete') {
-      if (item.kind === 'folder') await removeFolder(item.id); else await removeBookmark(item.id);
+      if (item.kind === 'folder') await removeFolder(item.id);
+      else { await removeBookmark(item.id); await deleteThumbnail(item.url); }
     } else if (a === 'edit') {
       if (item.kind === 'bookmark') setDialog({ mode: 'edit-bookmark', targetId: item.id, initial: { title: item.title, url: item.url } });
       else setDialog({ mode: 'rename-folder', targetId: item.id, initial: { title: item.title } });
@@ -134,7 +141,8 @@ export default function App() {
       window.open(item.url, '_blank', 'noopener');
     } else if (a === 'refresh-thumb' && item.kind === 'bookmark') {
       if (await ensureCapturePermission()) {
-        chrome.runtime.sendMessage({ type: 'capture-url', url: item.url });
+        // 抓取完成后回调 → 触发缩略图重读，无需刷新页面即可看到新图
+        chrome.runtime.sendMessage({ type: 'capture-url', url: item.url }, () => setThumbRefresh((t) => t + 1));
       }
     }
     setMenu(null);
@@ -176,7 +184,10 @@ export default function App() {
           onMoveInto={handleMoveInto}
         />
       )}
-      <button className="fab" onClick={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })}>＋</button>
+      <div className="fab-group">
+        <button className="fab fab--secondary" title="新增文件夹" onClick={() => setDialog({ mode: 'create-folder', initial: { title: '' } })}>📁</button>
+        <button className="fab" title="新增书签" onClick={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })}>＋</button>
+      </div>
       {dialog && <EditDialog mode={dialog.mode} initial={dialog.initial} onSubmit={submitDialog} onCancel={() => setDialog(null)} />}
       {menu && <ContextMenu x={menu.x} y={menu.y} isFolder={menu.isFolder} onAction={handleMenuAction} onClose={() => setMenu(null)} />}
     </div>

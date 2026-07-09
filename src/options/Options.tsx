@@ -69,6 +69,34 @@ export default function Options() {
             <option value="screenshot">网页截图</option>
           </select>
         </label>
+        {settings.tileStyle === 'screenshot' && (
+          <>
+            <label className="field">
+              <span>截图更新时机</span>
+              <select
+                aria-label="截图更新时机"
+                value={settings.thumbnailPolicy}
+                onChange={(e) => void patch({ thumbnailPolicy: e.target.value as Settings['thumbnailPolicy'] })}
+              >
+                <option value="always">每次访问</option>
+                <option value="stale">超过 N 天才更新</option>
+                <option value="never">从不自动</option>
+              </select>
+            </label>
+            {settings.thumbnailPolicy === 'stale' && (
+              <label className="field">
+                <span>过期天数 N</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={90}
+                  value={settings.thumbnailStaleDays}
+                  onChange={(e) => void patch({ thumbnailStaleDays: Math.min(90, Math.max(1, Number(e.target.value) || 7)) })}
+                />
+              </label>
+            )}
+          </>
+        )}
         <label className="field">
           <span>主题</span>
           <select aria-label="主题" value={settings.theme} onChange={(e) => void patch({ theme: e.target.value as Settings['theme'] })}>
