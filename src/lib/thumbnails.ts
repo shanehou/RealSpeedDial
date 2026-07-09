@@ -22,8 +22,11 @@ function tx<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore) 
   return openDb().then((db) => new Promise<T>((resolve, reject) => {
     const t = db.transaction(store, mode);
     const req = fn(t.objectStore(store));
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    let result: T;
+    req.onsuccess = () => { result = req.result; };
+    t.oncomplete = () => resolve(result);
+    t.onerror = () => reject(t.error ?? req.error);
+    t.onabort = () => reject(t.error ?? req.error);
   }));
 }
 

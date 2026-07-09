@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { installChromeMock, type ChromeMock } from '../../tests/setup';
-import { getSubTree, createBookmark, moveBookmark, onBookmarksChanged } from './bookmarks';
+import { getSubTree, createBookmark, moveBookmark, removeBookmark, removeFolder, onBookmarksChanged } from './bookmarks';
 
 let c: ChromeMock;
 beforeEach(() => { c = installChromeMock(); });
@@ -21,6 +21,16 @@ describe('bookmarks wrapper', () => {
     c.bookmarks.move.mockResolvedValue({});
     await moveBookmark('id', { parentId: 'p', index: 2 });
     expect(c.bookmarks.move).toHaveBeenCalledWith('id', { parentId: 'p', index: 2 });
+  });
+  it('removeFolder calls removeTree', async () => {
+    c.bookmarks.removeTree.mockResolvedValue(undefined);
+    await removeFolder('id');
+    expect(c.bookmarks.removeTree).toHaveBeenCalledWith('id');
+  });
+  it('removeBookmark calls remove', async () => {
+    c.bookmarks.remove.mockResolvedValue(undefined);
+    await removeBookmark('id');
+    expect(c.bookmarks.remove).toHaveBeenCalledWith('id');
   });
   it('onBookmarksChanged subscribes all events and returns unsub', () => {
     const cb = vi.fn();
