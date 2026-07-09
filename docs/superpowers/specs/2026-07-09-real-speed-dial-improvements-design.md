@@ -12,7 +12,7 @@ Real Speed Dial 是一个类 Vivaldi 的书签 Speed Dial 新标签页扩展（M
 
 1. 新增 MIT LICENSE。
 2. 多语言：README 默认英文 + 中文链接切换；扩展 UI 中英双语，可在设置页手动切换。
-3. **【最重要】修复面包屑**：可点击，且显示从"配置的书签根目录 → 当前目录"的完整路径。
+3. **【最重要】修复面包屑**：可点击，且显示从"浏览器书签根目录 → 当前目录"的完整路径（"根目录"= 整棵书签树的根，非设置里选的目录）。
 4. 非主页 Tab 上提供"一键把该 Tab 设为当前目录"的入口。
 5. 修复主题色磁贴文字可读性（亮色相与白字对比不足）。
 6. 磁贴 hover 时像普通链接那样在浏览器左下角显示目标网址。
@@ -20,7 +20,7 @@ Real Speed Dial 是一个类 Vivaldi 的书签 Speed Dial 新标签页扩展（M
 
 ## 非目标
 
-- 不重构核心导航模型（仍是 `folderId` 深度轴 + `tabId` 横向轴 + 递归替换）。
+- 不重构核心导航模型：仍是 `folderId` 深度轴 + `tabId` 横向轴 + 递归替换。但本轮**扩大可导航范围到整棵浏览器书签树**（见 §3），"配置的根目录"语义改为"新标签页默认落地目录"。
 - 不引入后端/代理服务。
 - 不做除中/英以外的语言。
 - 不本地化 Chrome 商店清单的名称/描述（见"已知限制"）。
@@ -63,15 +63,22 @@ Real Speed Dial 是一个类 Vivaldi 的书签 Speed Dial 新标签页扩展（M
 
 ## 3. 面包屑修复（#3，最重要）
 
-### 3.1 现状与根因
-- `buildFolderView` 的面包屑 = `getAncestors(root, folderId)`，其中 `root` 是 `getSubTree(rootId)` 得到的"配置根目录子树"。逻辑本身正确：从配置根目录到 `folderId`。
-- 但用户平时通过**子目录 Tab** 浏览时，`folderId` 始终停在根，`tabId` 变化不影响面包屑 → 面包屑永远只有 1 级；且该唯一级渲染为"当前态"（白色粗体、`cursor:default`、点击是回到自身的 no-op）→ 观感就是"点不动、没路径"。
+### 3.1 "根目录"的定义（关键澄清）
+- **"根目录" = 整个浏览器书签的根**（`chrome.bookmarks` 的不可见根节点 `id="0"`，其直接子级为「书签栏」「其他书签」「移动设备书签」等），**不是**设置里选择的目录。
+- 设置里选择的目录（`rootFolderId`）语义改为**"新标签页默认落地的目录"**，不再是导航边界。
+- 用户选择：**完整可导航**——面包屑每一级都可点，可一路向上导航到整棵书签树。
 
-### 3.2 设计
-- **面包屑语义确定为**：从"配置的书签根目录"到"当前目录 `folderId`"的完整路径，**不包含**横向预览的 `tabId`。
-- 每个非末级 crumb 为可点按钮，点击 → `navigate(crumb.id, HOME_TAB_ID, true)`（跳到该级、Tab 复位主页、压入 history）。末级为当前目录，呈现为不可点当前态。
-- 让面包屑真正能列出多级的关键在于 #4：用户可把 Tab"进入"为当前目录，从而 `folderId` 逐层加深、面包屑随之变长且出现可点的祖先级。
-- `Breadcrumb.tsx` / `mapping.ts` 的既有逻辑基本保留；重点是**补充点击跳转的回归测试**（现有测试仅断言 crumb 存在，未断言点击后确实导航）。若实测发现点击未生效的真实缺陷，一并修复。
+### 3.2 现状与根因
+- 现状 `useBookmarkTree` 用 `getSubTree(rootId)` 只取"配置目录子树"，`buildFolderView` 的 `getAncestors(root, folderId)` 因此只能从配置目录起算 → 无法显示其上层，且平时用 Tab 浏览时 `folderId` 停在配置目录、面包屑常年仅 1 级、观感"点不动、没路径"。
+
+### 3.3 设计
+- **数据加载改为整棵树**：`useBookmarkTree` 用 `chrome.bookmarks.getTree()`，`root` = 浏览器书签根节点（`id="0"`）。`buildFolderView(root, folderId, tabId)` 的 `getAncestors` 于是天然产出"浏览器根 → 当前目录"的完整路径。
+- **面包屑语义**：从浏览器书签根到当前目录 `folderId` 的完整路径，**不包含**横向预览的 `tabId`；每个非末级 crumb 可点，点击 → `navigate(crumb.id, HOME_TAB_ID, true)`；末级为当前目录（不可点当前态）。
+- **根节点渲染**：不可见根 `id="0"` 标题为空 → 面包屑首级用 home 图标 + 本地化文案「书签 / Bookmarks」；点击它进入根视图（Tab 栏 = 书签栏/其他书签/移动设备书签，无"主页"Tab，因根无直接书签，符合原设计 §3.3 边界规则）。
+- **默认落地与初始化**：`resolveInitialNav` 校验 `navState` 是否仍存在于整棵树；默认落地 = `rootFolderId`；`rootFolderId` 失效则回退到「书签栏」(`id="1"`)；`rootFolderId` 未设置 → 仍显示引导页（其文案改为"选择默认落地目录"）。
+- **导航无边界**：面包屑（向上/任意）、Tab、「进入」按钮（#4）、文件夹磁贴（向下）都在整棵树内自由导航。
+- **回归测试**：现有测试仅断言 crumb 存在，需补"点击祖先级 crumb 确实导航""能从深层一路点回到书签根"的测试。
+- **搜索范围（本轮保持不变）**：实时过滤仍限定在"配置的默认落地目录子树"内（`findNode(fullRoot, rootFolderId)` 后过滤），避免行为突变；如需改为整树搜索可后续再议。
 
 ---
 
@@ -184,26 +191,30 @@ interface WallpaperAttribution {                // 仅 Unsplash 需要
 
 ## 数据模型变更汇总（`types.ts`）
 - `BackgroundSetting` 增 `{ type:'auto'; source:WallpaperSource }`。
-- `Settings` 增 `language`、`unsplashAccessKey?`。
+- `Settings` 增 `language`（`unsplashAccessKey` 不入同步的 `Settings`，改存 `storage.local`）。
 - `DEFAULT_SETTINGS` 增 `language:'auto'`。
 - 新增 `WallpaperSource`、`WallpaperAttribution`。
+- `rootFolderId` 语义变化：由"导航边界/唯一可见范围"改为"新标签页默认落地目录"（无类型变更）。
+- `constants.ts` 增 `UNSPLASH_KEY`（storage.local）、壁纸缓存相关键。
 
 ## 权限变更汇总
 - `optional_host_permissions` 增 Bing / Picsum / Unsplash 相关主机。
 - 均为按需申请，默认不索取；不启用自动壁纸则完全不涉及。
 
 ## 测试策略（Vitest + Testing Library）
-- 导航：点击面包屑祖先级确实导航（回归）；`TabBar` 进入按钮仅在激活的非主页 Tab 出现、点击后 `folderId` 变更且面包屑加深。
+- 导航：面包屑从浏览器书签根（`id="0"` 渲染为「书签/Bookmarks」home 级）显示到当前目录；点击祖先级（含根级）确实导航（回归）；从深层能一路点回书签根；`TabBar` 进入按钮仅在激活的非主页 Tab 出现、点击后 `folderId` 变更且面包屑加深。
+- 数据加载：`useBookmarkTree` 走 `getTree()`；`resolveInitialNav` 默认落地 = `rootFolderId`、失效回退到书签栏。
 - 磁贴：渲染为带正确 `href` 的 `<a>`；`openInNewTab` 影响 `target`；拖拽后不误触跳转。
 - i18n：`t()` 插值与回退；`resolveLang('auto')` 判定；切换语言后 UI 文案更新。
 - 壁纸：`todayKey` 缓存命中/未命中；离线回退到缓存；`resolveUnsplash` 产出的 URL 含尺寸参、`download_location` 被调用；`screenPx` 钳制。
 - 配色：主题色磁贴带 `tile--theme` 及可读层类。
 
 ## 已知限制
+- 导航范围现在是**整棵书签树**（可越过默认落地目录向上/向任意分支浏览）；而实时搜索本轮仍限定在默认落地目录子树——两者范围不对称，属有意取舍（见 §3.3）。
 - 因采用自建 i18n（非 `chrome.i18n`），Chrome 商店清单的**名称/描述**保持单一语言（英文）；仅 App 内 UI 双语可切换。
 - Unsplash 需用户自备 Access Key（默认关闭），且 key 以客户端方式存于本地浏览器（无代理）。
 - Bing/Picsum 通过其公共服务取图，可用性受第三方服务影响；离线时回退到缓存。
 
 ## 涉及文件（预估）
 - 新增：`LICENSE`、`README.zh-CN.md`、`src/lib/i18n.ts`、`src/lib/wallpaper.ts`、`src/newtab/hooks/useI18n.ts`、`src/newtab/components/Attribution.tsx`、以及相应测试。
-- 修改：`package.json`、`README.md`、`manifest.config.ts`、`src/types.ts`、`src/lib/constants.ts`、`src/lib/permissions.ts`、`src/lib/mapping.ts`（如需）、`src/newtab/App.tsx`、`src/newtab/components/{TabBar,Breadcrumb,Tile,Grid,ContextMenu,EditDialog,EmptyState,Guidance,SearchBar,States}.tsx`、`src/options/Options.tsx`、`src/options/components/FolderTreeSelect.tsx`、`src/newtab/styles.css`、`src/options/styles.css`。
+- 修改：`package.json`、`README.md`、`manifest.config.ts`、`src/types.ts`、`src/lib/constants.ts`、`src/lib/permissions.ts`、`src/lib/mapping.ts`（面包屑根节点/整树祖先）、`src/lib/navState.ts`（对整树校验、失效回退）、`src/lib/search.ts`（过滤限定到默认落地目录子树）、`src/newtab/hooks/useBookmarkTree.ts`（改用 `getTree()`）、`src/newtab/hooks/useNavState.ts`、`src/newtab/App.tsx`、`src/newtab/components/{TabBar,Breadcrumb,Tile,Grid,ContextMenu,EditDialog,EmptyState,Guidance,SearchBar,States}.tsx`、`src/options/Options.tsx`、`src/options/components/FolderTreeSelect.tsx`、`src/newtab/styles.css`、`src/options/styles.css`。
