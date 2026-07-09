@@ -13,8 +13,10 @@ import { EmptyState } from './components/EmptyState';
 import { Guidance } from './components/Guidance';
 import { EditDialog, type EditMode } from './components/EditDialog';
 import { ContextMenu, type MenuAction } from './components/ContextMenu';
+import { SearchBar } from './components/SearchBar';
 import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookmark } from '@/lib/bookmarks';
 import { resolveMoveIndex } from '@/lib/reorder';
+import { filterBookmarks, buildSearchUrl } from '@/lib/search';
 import './styles.css';
 
 export default function App() {
@@ -70,6 +72,13 @@ export default function App() {
 
   const openOptions = useCallback(() => chrome.runtime.openOptionsPage(), []);
 
+  const [query, setQuery] = useState('');
+  const searchResults = useMemo(() => (root ? filterBookmarks(root, query) : []), [root, query]);
+  const submitSearch = useCallback((q: string) => {
+    if (!q.trim() || !settings) return;
+    window.location.href = buildSearchUrl(settings.searchEngine, q);
+  }, [settings]);
+
   const [dialog, setDialog] = useState<{ mode: EditMode; targetId?: string; initial: { title: string; url?: string } } | null>(null);
 
   const submitDialog = useCallback(async (data: { title: string; url?: string }) => {
@@ -123,6 +132,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <SearchBar query={query} results={searchResults} onQueryChange={setQuery} onSubmit={submitSearch} onPick={openUrl} />
       <Breadcrumb crumbs={view.breadcrumb} onGo={(id) => navigate(id, HOME_TAB_ID, true)} />
       <TabBar tabs={view.tabs} activeTabId={view.activeTabId} onSelect={(id) => navigate(view.folderId, id, true)} />
       {view.items.length === 0 ? (
