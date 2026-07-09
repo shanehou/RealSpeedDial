@@ -1,0 +1,21 @@
+import { defineManifest } from '@crxjs/vite-plugin';
+
+export default defineManifest({
+  manifest_version: 3,
+  name: 'Real Speed Dial',
+  version: '0.1.0',
+  description: '类 Vivaldi 的书签 Speed Dial 新标签页',
+  minimum_chrome_version: '116',
+  icons: {
+    16: 'public/icons/icon16.png',
+    32: 'public/icons/icon32.png',
+    48: 'public/icons/icon48.png',
+    128: 'public/icons/icon128.png',
+  },
+  permissions: ['bookmarks', 'storage', 'favicon'],
+  optional_permissions: ['tabs'],
+  optional_host_permissions: ['<all_urls>'],
+  background: { service_worker: 'src/background/service-worker.ts', type: 'module' },
+  chrome_url_overrides: { newtab: 'src/newtab/index.html' },
+  options_page: 'src/options/index.html',
+});

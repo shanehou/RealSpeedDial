@@ -8,6 +8,9 @@ node_modules/
 dist/
 *.local
 
+# TypeScript incremental build info (from `tsc -b`)
+*.tsbuildinfo
+
 # Logs
 *.log
 npm-debug.log*
