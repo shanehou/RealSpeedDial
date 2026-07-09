@@ -7,3 +7,6 @@ export const THUMB_STORE = 'thumbnails';
 export const ASSET_STORE = 'assets';
 export const WALLPAPER_KEY = 'wallpaper';
 export const FOLDER_PREVIEW_COUNT = 4;
+export const UNSPLASH_KEY = 'unsplashAccessKey'; // storage.local
+export const WALLPAPER_AUTO_KEY = 'wallpaper-auto'; // IndexedDB ASSET_STORE blob key
+export const WALLPAPER_META_KEY = 'wallpaperMeta';  // storage.local: { source, date, attribution? }

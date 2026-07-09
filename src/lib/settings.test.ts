@@ -15,4 +15,8 @@ describe('settings', () => {
     expect(next.columns).toBe(8);
     expect((await loadSettings()).rootFolderId).toBe('abc');
   });
+  it('provides default language "auto" when unset', async () => {
+    const s = await loadSettings();
+    expect(s.language).toBe('auto');
+  });
 });

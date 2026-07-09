@@ -49,12 +49,23 @@ export interface FolderView {
 
 export type ThumbnailPolicy = 'always' | 'stale' | 'never';
 
+export type WallpaperSource = 'bing' | 'picsum' | 'unsplash';
+
 export type BackgroundSetting =
   | { type: 'color'; value: string }
-  | { type: 'wallpaper' };
+  | { type: 'wallpaper' }
+  | { type: 'auto'; source: WallpaperSource };
+
+export type Language = 'auto' | 'zh' | 'en';
+
+export interface WallpaperAttribution {
+  photographer: string;
+  photographerUrl: string; // 含 utm
+  unsplashUrl: string;     // 含 utm
+}
 
 export interface Settings {
-  rootFolderId: string | null;
+  rootFolderId: string | null; // 语义：新标签页默认落地目录
   tileStyle: TileStyle;
   thumbnailPolicy: ThumbnailPolicy;
   thumbnailStaleDays: number;
@@ -64,6 +75,7 @@ export interface Settings {
   background: BackgroundSetting;
   columns: number;
   searchEngine: string;
+  language: Language;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -77,6 +89,7 @@ export const DEFAULT_SETTINGS: Settings = {
   background: { type: 'color', value: '#1e2130' },
   columns: 6,
   searchEngine: 'https://www.google.com/search?q=%s',
+  language: 'auto',
 };
 
 export interface NavState {
