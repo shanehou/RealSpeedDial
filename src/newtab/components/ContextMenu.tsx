@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useI18n } from '@/i18n';
 
 export type MenuAction = 'edit' | 'delete' | 'open-new-tab' | 'refresh-thumb';
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ContextMenu({ x, y, isFolder, onAction, onClose }: Props) {
+  const { t } = useI18n();
   useEffect(() => {
     const close = () => onClose();
     window.addEventListener('click', close);
@@ -19,10 +21,10 @@ export function ContextMenu({ x, y, isFolder, onAction, onClose }: Props) {
 
   return (
     <div className="ctxmenu" style={{ left: x, top: y }} onClick={(e) => e.stopPropagation()}>
-      <button className="ctxmenu__item" onClick={() => onAction('edit')}>编辑</button>
-      {!isFolder && <button className="ctxmenu__item" onClick={() => onAction('open-new-tab')}>在新标签页打开</button>}
-      {!isFolder && <button className="ctxmenu__item" onClick={() => onAction('refresh-thumb')}>刷新缩略图</button>}
-      <button className="ctxmenu__item ctxmenu__item--danger" onClick={() => onAction('delete')}>删除</button>
+      <button className="ctxmenu__item" onClick={() => onAction('edit')}>{t('ctx.edit')}</button>
+      {!isFolder && <button className="ctxmenu__item" onClick={() => onAction('open-new-tab')}>{t('ctx.openNewTab')}</button>}
+      {!isFolder && <button className="ctxmenu__item" onClick={() => onAction('refresh-thumb')}>{t('ctx.refreshThumb')}</button>}
+      <button className="ctxmenu__item ctxmenu__item--danger" onClick={() => onAction('delete')}>{t('ctx.delete')}</button>
     </div>
   );
 }

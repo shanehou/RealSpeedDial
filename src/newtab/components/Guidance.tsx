@@ -1,10 +1,12 @@
+import { useI18n } from '@/i18n';
 interface Props { onOpenOptions: () => void; }
 export function Guidance({ onOpenOptions }: Props) {
+  const { t } = useI18n();
   return (
     <div className="guidance">
       <h1>Real Speed Dial</h1>
-      <p>请先选择一个书签目录作为首页内容来源。</p>
-      <button className="btn btn--primary" onClick={onOpenOptions}>选择目录</button>
+      <p>{t('guidance.desc')}</p>
+      <button className="btn btn--primary" onClick={onOpenOptions}>{t('guidance.select')}</button>
     </div>
   );
 }

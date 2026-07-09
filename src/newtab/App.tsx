@@ -22,11 +22,15 @@ import { ensureCapturePermission } from '@/lib/permissions';
 import { resolveTheme } from '@/lib/theme';
 import { getAsset, deleteThumbnail } from '@/lib/thumbnails';
 import { WALLPAPER_KEY } from '@/lib/constants';
+import { I18nProvider } from '@/i18n';
+import { resolveLang, t as translate } from '@/lib/i18n';
 import './styles.css';
 
 export default function App() {
   const { settings } = useSettings();
   const rootId = settings?.rootFolderId ?? null;
+  const lang = resolveLang(settings?.language ?? 'auto');
+  const t = useCallback((key: Parameters<typeof translate>[1], params?: Parameters<typeof translate>[2]) => translate(lang, key, params), [lang]);
   const { root, loading } = useBookmarkTree(rootId);
   const { navState, persist, ready } = useNavState(settings?.restoreLastPosition ?? true);
 
@@ -167,15 +171,15 @@ export default function App() {
     await moveBookmark(activeId, { parentId: targetFolderId });
   }, []);
 
-  if (!settings || loading) return <div className="loading" />;
-  if (!rootId) return <Guidance onOpenOptions={openOptions} />;
-  if (!view) return <div className="loading" />;
-
   const searching = query.trim().length > 0;
 
-  return (
+  let content: React.ReactNode;
+  if (!settings || loading) content = <div className="loading" />;
+  else if (!rootId) content = <Guidance onOpenOptions={openOptions} />;
+  else if (!view) content = <div className="loading" />;
+  else content = (
     <div className="app">
-      <button className="icon-btn settings-btn" title="设置" aria-label="设置" onClick={openOptions}>
+      <button className="icon-btn settings-btn" title={t('action.settings')} aria-label={t('action.settings')} onClick={openOptions}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <line x1="4" y1="7" x2="20" y2="7" />
           <circle cx="9" cy="7" r="2.4" fill="currentColor" stroke="none" />
@@ -225,14 +229,14 @@ export default function App() {
       )}
 
       <div className="fab-group">
-        <button className="fab fab--secondary" title="新增文件夹" aria-label="新增文件夹" onClick={() => setDialog({ mode: 'create-folder', initial: { title: '' } })}>
+        <button className="fab fab--secondary" title={t('action.newFolder')} aria-label={t('action.newFolder')} onClick={() => setDialog({ mode: 'create-folder', initial: { title: '' } })}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <line x1="12" y1="11" x2="12" y2="15" />
             <line x1="10" y1="13" x2="14" y2="13" />
           </svg>
         </button>
-        <button className="fab" title="新增书签" aria-label="新增书签" onClick={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })}>
+        <button className="fab" title={t('action.newBookmark')} aria-label={t('action.newBookmark')} onClick={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
@@ -243,4 +247,5 @@ export default function App() {
       {menu && <ContextMenu x={menu.x} y={menu.y} isFolder={menu.isFolder} onAction={handleMenuAction} onClose={() => setMenu(null)} />}
     </div>
   );
+  return <I18nProvider language={settings?.language}>{content}</I18nProvider>;
 }
