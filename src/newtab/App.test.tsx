@@ -66,13 +66,12 @@ describe('App navigation', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /选择目录/ })).toBeInTheDocument());
   });
 
-  it('filters tiles live as you type in the search box', async () => {
+  it('filters bookmarks live and groups by current folder', async () => {
     render(<App />);
     await screen.findByRole('tab', { name: '工作' });
     await userEvent.type(screen.getByRole('searchbox'), 'jira');
-    await waitFor(() => expect(screen.getByText(/搜索结果/)).toBeInTheDocument());
-    expect(screen.getByText('Jira')).toBeInTheDocument();
-    // 搜索态隐藏 Tab 栏与非匹配项
+    await waitFor(() => expect(screen.getByRole('link', { name: /Jira/ })).toBeInTheDocument());
+    expect(screen.getByText('当前目录')).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: '工作' })).not.toBeInTheDocument();
     expect(screen.queryByText('GitHub')).not.toBeInTheDocument();
   });

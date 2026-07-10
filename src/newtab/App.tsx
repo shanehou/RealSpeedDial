@@ -8,7 +8,7 @@ import { resolveInitialNav } from '@/lib/navState';
 import { HOME_TAB_ID } from '@/lib/constants';
 import { TabBar } from './components/TabBar';
 import { Grid } from './components/Grid';
-import { Tile } from './components/Tile';
+import { SearchResults } from './components/SearchResults';
 import { Breadcrumb } from './components/Breadcrumb';
 import { EmptyState } from './components/EmptyState';
 import { Guidance } from './components/Guidance';
@@ -17,7 +17,7 @@ import { ContextMenu, type MenuAction } from './components/ContextMenu';
 import { SearchBar } from './components/SearchBar';
 import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookmark } from '@/lib/bookmarks';
 import { resolveMoveIndex } from '@/lib/reorder';
-import { filterBookmarks, buildSearchUrl } from '@/lib/search';
+import { searchBookmarks, buildSearchUrl } from '@/lib/search';
 import { ensureCapturePermission } from '@/lib/permissions';
 import { resolveTheme } from '@/lib/theme';
 import { getAsset, deleteThumbnail } from '@/lib/thumbnails';
@@ -101,7 +101,10 @@ export default function App() {
   const openOptions = useCallback(() => chrome.runtime.openOptionsPage(), []);
 
   const [query, setQuery] = useState('');
-  const searchResults = useMemo(() => (root ? filterBookmarks(root, query) : []), [root, query]);
+  const searchResults = useMemo(
+    () => (root && folderId !== null ? searchBookmarks(root, query, folderId) : { current: [], others: [] }),
+    [root, query, folderId],
+  );
   const submitSearch = useCallback((q: string) => {
     if (!q.trim() || !settings) return;
     window.location.href = buildSearchUrl(settings.searchEngine, q);
@@ -123,7 +126,12 @@ export default function App() {
 
   // 上下文菜单可作用于普通网格项或搜索结果项
   const findItem = useCallback(
-    (id: string) => view?.items.find((it) => it.id === id) ?? searchResults.find((b) => b.id === id),
+    (id: string) => {
+      const inView = view?.items.find((it) => it.id === id);
+      if (inView) return inView;
+      const hit = [...searchResults.current, ...searchResults.others].find((b) => b.id === id);
+      return hit ? ({ kind: 'bookmark', id: hit.id, title: hit.title, url: hit.url, index: 0 } as const) : undefined;
+    },
     [view, searchResults],
   );
 
@@ -187,20 +195,7 @@ export default function App() {
       </div>
 
       {searching ? (
-        <>
-          <p className="search-header">搜索结果：{searchResults.length} 个匹配「{query.trim()}」</p>
-          {searchResults.length === 0 ? (
-            <div className="empty"><p>没有匹配的书签</p></div>
-          ) : (
-            <div className="grid" style={{ ['--cols']: String(settings.columns) } as React.CSSProperties}>
-              {searchResults.map((b) => (
-                <div className="grid__cell" key={b.id}>
-                  <Tile id={b.id} title={b.title} url={b.url} thumbnail={thumbnails[b.url]} tileStyle={settings.tileStyle} openInNewTab={settings.openInNewTab} onContextMenu={openContextMenu} />
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+        <SearchResults results={searchResults} openInNewTab={settings.openInNewTab} onContextMenu={openContextMenu} />
       ) : (
         <>
           <Breadcrumb crumbs={view.breadcrumb} onGo={(id) => navigate(id, HOME_TAB_ID, true)} />
