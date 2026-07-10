@@ -13,6 +13,11 @@ body { margin: 0; font-family: system-ui, -apple-system, "PingFang SC", sans-ser
 .tabbar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
 .tab { padding: 6px 14px; border: none; border-radius: 8px; background: #2a2e42; color: #cbd2e0; cursor: pointer; font-size: 14px; }
 .tab--active { background: #4a9eff; color: #fff; }
+.tab-wrap { position: relative; display: inline-flex; align-items: center; }
+.tab-wrap--active .tab { padding-right: 34px; }
+.tab__enter { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: none; border-radius: 6px; background: rgba(255,255,255,.18); color: #fff; cursor: pointer; }
+.tab__enter:hover { background: rgba(255,255,255,.3); }
+.tab__enter svg { display: block; }
 .breadcrumb { margin-bottom: 14px; font-size: 13px; color: #cdd4e6; display: flex; flex-wrap: wrap; align-items: center; width: fit-content; max-width: 100%; padding: 5px 12px; border-radius: 10px; background: rgba(20, 22, 34, .38); backdrop-filter: blur(6px); }
 .breadcrumb__link { background: none; border: none; color: #9ec5ff; cursor: pointer; padding: 0; font-size: 13px; display: inline-flex; align-items: center; }
 .breadcrumb__link:hover { text-decoration: underline; }

@@ -11,18 +11,29 @@ const tabs = [
 
 describe('TabBar', () => {
   it('renders tabs and marks active', () => {
-    render(<TabBar tabs={tabs} activeTabId="f1" onSelect={() => {}} />);
+    render(<TabBar tabs={tabs} activeTabId="f1" onSelect={() => {}} onEnter={() => {}} />);
     expect(screen.getByRole('tab', { name: '工作' })).toHaveAttribute('aria-selected', 'true');
   });
   it('calls onSelect on click', async () => {
     const onSelect = vi.fn();
-    render(<TabBar tabs={tabs} activeTabId="f1" onSelect={onSelect} />);
+    render(<TabBar tabs={tabs} activeTabId="f1" onSelect={onSelect} onEnter={() => {}} />);
     await userEvent.click(screen.getByRole('tab', { name: '主页' }));
     expect(onSelect).toHaveBeenCalledWith(HOME_TAB_ID);
   });
+  it('shows an Enter button only on the active non-home tab and calls onEnter', async () => {
+    const onEnter = vi.fn();
+    render(<TabBar tabs={tabs} activeTabId="f1" onSelect={() => {}} onEnter={onEnter} />);
+    const enter = screen.getByRole('button', { name: '进入此目录' });
+    await userEvent.click(enter);
+    expect(onEnter).toHaveBeenCalledWith('f1');
+  });
+  it('hides Enter button when the active tab is Home', () => {
+    render(<TabBar tabs={tabs} activeTabId={HOME_TAB_ID} onSelect={() => {}} onEnter={() => {}} />);
+    expect(screen.queryByRole('button', { name: '进入此目录' })).not.toBeInTheDocument();
+  });
   it('renders nothing when only Home tab', () => {
     const { container } = render(
-      <TabBar tabs={[{ id: HOME_TAB_ID, title: '主页', isHome: true }]} activeTabId={HOME_TAB_ID} onSelect={() => {}} />,
+      <TabBar tabs={[{ id: HOME_TAB_ID, title: '主页', isHome: true }]} activeTabId={HOME_TAB_ID} onSelect={() => {}} onEnter={() => {}} />,
     );
     expect(container).toBeEmptyDOMElement();
   });

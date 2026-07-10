@@ -209,7 +209,7 @@ export default function App() {
       ) : (
         <>
           <Breadcrumb crumbs={view.breadcrumb} onGo={(id) => navigate(id, HOME_TAB_ID, true)} />
-          <TabBar tabs={view.tabs} activeTabId={view.activeTabId} onSelect={(id) => navigate(view.folderId, id, true)} />
+          <TabBar tabs={view.tabs} activeTabId={view.activeTabId} onSelect={(id) => navigate(view.folderId, id, true)} onEnter={(id) => navigate(id, HOME_TAB_ID, true)} />
           {view.items.length === 0 ? (
             <EmptyState onAdd={() => setDialog({ mode: 'create-bookmark', initial: { title: '', url: '' } })} />
           ) : (
