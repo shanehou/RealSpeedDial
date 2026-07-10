@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { getTree } from '@/lib/bookmarks';
 import { loadSettings, saveSettings } from '@/lib/settings';
 import { findNode } from '@/lib/mapping';
-import { ensureCapturePermission } from '@/lib/permissions';
+import { ensureCapturePermission, ensureWallpaperPermission } from '@/lib/permissions';
 import { putAsset } from '@/lib/thumbnails';
 import { WALLPAPER_KEY } from '@/lib/constants';
 import { resolveLang, t as translate } from '@/lib/i18n';
-import type { BookmarkNode, Settings, TileStyle } from '@/types';
+import { getUnsplashKey, setUnsplashKey, getDailyWallpaper } from '@/lib/wallpaper';
+import type { BookmarkNode, Settings, TileStyle, WallpaperSource } from '@/types';
 import { FolderTreeSelect } from './components/FolderTreeSelect';
 import './styles.css';
 
@@ -14,10 +15,12 @@ export default function Options() {
   const [tree, setTree] = useState<BookmarkNode | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [saved, setSaved] = useState(false);
+  const [unsplashKey, setUnsplashKeyState] = useState('');
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { void getTree().then((t) => setTree(t[0])); }, []);
   useEffect(() => { void loadSettings().then(setSettings); }, []);
+  useEffect(() => { void getUnsplashKey().then((k) => setUnsplashKeyState(k ?? '')); }, []);
   useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current); }, []);
 
   const patch = async (p: Partial<Settings>) => {
@@ -131,10 +134,19 @@ export default function Options() {
           <select
             aria-label={t('options.background')}
             value={settings.background.type}
-            onChange={(e) => void patch({ background: e.target.value === 'wallpaper' ? { type: 'wallpaper' } : { type: 'color', value: '#1e2130' } })}
+            onChange={async (e) => {
+              const type = e.target.value;
+              if (type === 'wallpaper') return void patch({ background: { type: 'wallpaper' } });
+              if (type === 'auto') {
+                if (!(await ensureWallpaperPermission('bing'))) return;
+                return void patch({ background: { type: 'auto', source: 'bing' } });
+              }
+              void patch({ background: { type: 'color', value: '#1e2130' } });
+            }}
           >
             <option value="color">{t('options.bgColor')}</option>
             <option value="wallpaper">{t('options.bgWallpaper')}</option>
+            <option value="auto">{t('options.bgAuto')}</option>
           </select>
         </label>
         {settings.background.type === 'color' && (
@@ -151,6 +163,44 @@ export default function Options() {
               if (file) { await putAsset(WALLPAPER_KEY, file); await patch({ background: { type: 'wallpaper' } }); }
             }} />
           </label>
+        )}
+        {settings.background.type === 'auto' && (
+          <>
+            <label className="field">
+              <span>{t('options.wallpaperSource')}</span>
+              <select
+                aria-label={t('options.wallpaperSource')}
+                value={settings.background.source}
+                onChange={async (e) => {
+                  const source = e.target.value as WallpaperSource;
+                  if (!(await ensureWallpaperPermission(source))) return;
+                  void patch({ background: { type: 'auto', source } });
+                }}
+              >
+                <option value="bing">{t('options.srcBing')}</option>
+                <option value="picsum">{t('options.srcPicsum')}</option>
+                <option value="unsplash">{t('options.srcUnsplash')}</option>
+              </select>
+            </label>
+            {settings.background.source === 'unsplash' && (
+              <>
+                <label className="field">
+                  <span>{t('options.unsplashKey')}</span>
+                  <input
+                    type="password"
+                    value={unsplashKey}
+                    placeholder={t('options.unsplashKeyPlaceholder')}
+                    onChange={(e) => { setUnsplashKeyState(e.target.value); void setUnsplashKey(e.target.value); }}
+                  />
+                </label>
+                <p className="hint"><a href="https://unsplash.com/developers" target="_blank" rel="noopener noreferrer">{t('options.unsplashHelp')}</a> · {t('options.unsplashNote')}</p>
+              </>
+            )}
+            <label className="field">
+              <span></span>
+              <button className="btn" onClick={() => { const bg = settings.background; if (bg.type === 'auto') void getDailyWallpaper(bg.source, { force: true }); }}>{t('options.shuffle')}</button>
+            </label>
+          </>
         )}
         <label className="field">
           <span>{t('options.columns')}</span>

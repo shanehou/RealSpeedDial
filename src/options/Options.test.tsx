@@ -46,4 +46,11 @@ describe('Options', () => {
     render(<Options />);
     expect(await screen.findByText('Real Speed Dial Settings')).toBeInTheDocument();
   });
+
+  it('enables auto wallpaper and reveals the source dropdown', async () => {
+    render(<Options />);
+    const bg = await screen.findByLabelText('背景');
+    await userEvent.selectOptions(bg, 'auto');
+    expect(await screen.findByLabelText('壁纸来源')).toBeInTheDocument();
+  });
 });
