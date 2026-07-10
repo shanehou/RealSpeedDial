@@ -17,7 +17,7 @@ import { ContextMenu, type MenuAction } from './components/ContextMenu';
 import { SearchBar } from './components/SearchBar';
 import { Attribution } from './components/Attribution';
 import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookmark } from '@/lib/bookmarks';
-import { resolveMoveIndex } from '@/lib/reorder';
+import { resolveReorderDestination } from '@/lib/reorder';
 import { searchBookmarks, buildSearchUrl } from '@/lib/search';
 import { ensureCapturePermission } from '@/lib/permissions';
 import { resolveTheme } from '@/lib/theme';
@@ -61,11 +61,13 @@ export default function App() {
     [view],
   );
   const [thumbRefresh, setThumbRefresh] = useState(0);
-  const thumbnails = useThumbnails(bookmarkUrls, settings?.tileStyle ?? 'favicon', thumbRefresh);
+  const thumbnails = useThumbnails(bookmarkUrls, settings?.tileStyle ?? 'themeColor', thumbRefresh);
 
   // 当前激活 Tab 对应的文件夹：主页 Tab → 当前文件夹；子目录 Tab → 该子目录。
   // 新增/排序都应作用于「用户当前所见」的这个文件夹。
-  const activeFolderId = folderId !== null && tabId !== HOME_TAB_ID ? tabId : folderId;
+  const activeFolderId = view
+    ? (!view.activeTabId || view.activeTabId === HOME_TAB_ID ? view.folderId : view.activeTabId)
+    : null;
 
   const navigate = useCallback((nextFolderId: string, nextTabId: string, push: boolean) => {
     setFolderId(nextFolderId);
@@ -87,12 +89,13 @@ export default function App() {
   useEffect(() => {
     if (!settings) return;
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true;
-    document.documentElement.dataset.theme = resolveTheme(settings.theme, prefersDark);
+    const resolved = resolveTheme(settings.theme, prefersDark);
+    document.documentElement.dataset.theme = resolved;
     let cancelled = false;
     let objectUrl: string | null = null;
     const bg = settings.background;
     if (bg.type === 'color') {
-      document.body.style.background = bg.value;
+      document.body.style.background = resolved === 'light' ? bg.light : bg.dark;
       setAttribution(null);
     } else if (bg.type === 'wallpaper') {
       setAttribution(null);
@@ -177,12 +180,9 @@ export default function App() {
   }, [menu, findItem]);
 
   const handleReorder = useCallback(async (activeId: string, from: number, to: number) => {
-    if (folderId === null || !view) return;
-    // 目标父目录：当前激活 Tab 对应的文件夹（主页则为当前文件夹）
-    const parentId = tabId === HOME_TAB_ID ? folderId : tabId;
-    // 用每项真实 index 换算，避免混排目录里显示位置≠存储索引导致错位
-    await moveBookmark(activeId, { parentId, index: resolveMoveIndex(view.items, from, to) });
-  }, [folderId, tabId, view]);
+    if (!view) return;
+    await moveBookmark(activeId, resolveReorderDestination(view, from, to));
+  }, [view]);
 
   const handleMoveInto = useCallback(async (activeId: string, targetFolderId: string) => {
     await moveBookmark(activeId, { parentId: targetFolderId });

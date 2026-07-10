@@ -1,6 +1,14 @@
 import { THUMB_DB_NAME, THUMB_DB_VERSION, THUMB_STORE, ASSET_STORE } from './constants';
 import type { ThumbnailRecord } from '@/types';
 
+export interface PendingThumbnailCapture {
+  sourceUrl: string;
+  dataUrl: string;
+  capturedAt: number;
+}
+
+const PENDING_CAPTURE_PREFIX = 'pending-thumbnail:';
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(THUMB_DB_NAME, THUMB_DB_VERSION);
@@ -48,4 +56,20 @@ export async function putAsset(key: string, blob: Blob): Promise<void> {
 
 export async function getAsset(key: string): Promise<Blob | undefined> {
   return tx<Blob | undefined>(ASSET_STORE, 'readonly', (s) => s.get(key) as IDBRequest<Blob | undefined>);
+}
+
+export async function putPendingCapture(id: string, capture: PendingThumbnailCapture): Promise<void> {
+  await tx(ASSET_STORE, 'readwrite', (s) => s.put(capture, `${PENDING_CAPTURE_PREFIX}${id}`));
+}
+
+export async function getPendingCapture(id: string): Promise<PendingThumbnailCapture | undefined> {
+  return tx<PendingThumbnailCapture | undefined>(
+    ASSET_STORE,
+    'readonly',
+    (s) => s.get(`${PENDING_CAPTURE_PREFIX}${id}`) as IDBRequest<PendingThumbnailCapture | undefined>,
+  );
+}
+
+export async function deletePendingCapture(id: string): Promise<void> {
+  await tx(ASSET_STORE, 'readwrite', (s) => s.delete(`${PENDING_CAPTURE_PREFIX}${id}`));
 }

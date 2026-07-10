@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import 'fake-indexeddb/auto';
-import { getThumbnail, putThumbnail, deleteThumbnail } from './thumbnails';
+import {
+  getThumbnail,
+  putThumbnail,
+  deleteThumbnail,
+  getPendingCapture,
+  putPendingCapture,
+  deletePendingCapture,
+} from './thumbnails';
 
 beforeEach(async () => {
   indexedDB = new IDBFactory();
@@ -19,5 +26,13 @@ describe('thumbnails', () => {
     await putThumbnail({ url: 'https://x.com', dataUrl: 'd', capturedAt: 1 });
     await deleteThumbnail('https://x.com');
     expect(await getThumbnail('https://x.com')).toBeUndefined();
+  });
+
+  it('stores, loads and deletes a pending current-page capture', async () => {
+    const pending = { sourceUrl: 'https://x.com', dataUrl: 'data:image/jpeg;base64,x', capturedAt: 123 };
+    await putPendingCapture('capture-1', pending);
+    expect(await getPendingCapture('capture-1')).toEqual(pending);
+    await deletePendingCapture('capture-1');
+    expect(await getPendingCapture('capture-1')).toBeUndefined();
   });
 });

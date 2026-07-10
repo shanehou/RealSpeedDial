@@ -16,7 +16,7 @@ const items: SpeedDialItem[] = [
 describe('Grid', () => {
   it('renders bookmarks as links and folders trigger onEnter', async () => {
     const onEnter = vi.fn();
-    render(<Grid items={items} columns={6} thumbnails={{}} tileStyle="favicon" openInNewTab={false} onEnter={onEnter} onContextMenu={() => {}} onReorder={() => {}} onMoveInto={() => {}} />);
+    render(<Grid items={items} columns={6} thumbnails={{}} tileStyle="themeColor" openInNewTab={false} onEnter={onEnter} onContextMenu={() => {}} onReorder={() => {}} onMoveInto={() => {}} />);
     expect(screen.getByRole('link', { name: /GitHub/ })).toHaveAttribute('href', 'https://github.com');
     await userEvent.click(screen.getByText(/工作/));
     expect(onEnter).toHaveBeenCalledWith('f');

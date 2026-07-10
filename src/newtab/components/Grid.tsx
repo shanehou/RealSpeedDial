@@ -1,9 +1,11 @@
+import { useEffect, useRef } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { SpeedDialItem, TileStyle } from '@/types';
 import { Tile } from './Tile';
 import { FolderTile } from './FolderTile';
+import { createDragClickGuard } from '@/lib/dragClickGuard';
 
 interface Props {
   items: SpeedDialItem[];
@@ -35,8 +37,16 @@ function SortableCell({ item, children }: { item: SpeedDialItem; children: React
 
 export function Grid({ items, columns, thumbnails, tileStyle, openInNewTab, onEnter, onContextMenu, onReorder, onMoveInto }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  // 见 dragClickGuard：拖拽一开始就武装，在 document 捕获层吞掉拖拽结束后补发的那次 click。
+  const guardRef = useRef(createDragClickGuard());
+  useEffect(() => guardRef.current.install(document), []);
+
+  const handleDragStart = () => { guardRef.current.arm(); };
+  const handleDragCancel = () => { guardRef.current.disarm(); };
 
   const handleDragEnd = (e: DragEndEvent) => {
+    // 兜底：拖拽若没有产生 click（松手在空白处），下一 tick 解除武装，避免误吞后续点击。
+    window.setTimeout(() => guardRef.current.disarm(), 0);
     const { active, over } = e;
     if (!over || active.id === over.id) return;
     const activeId = String(active.id);
@@ -48,7 +58,7 @@ export function Grid({ items, columns, thumbnails, tileStyle, openInNewTab, onEn
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragCancel={handleDragCancel} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
         <div className="grid" style={{ ['--cols']: String(columns) } as React.CSSProperties}>
           {items.map((it) => (

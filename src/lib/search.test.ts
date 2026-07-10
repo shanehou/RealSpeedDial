@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { flattenBookmarks, filterBookmarks, buildSearchUrl, searchBookmarks } from './search';
+import {
+  flattenBookmarks,
+  filterBookmarks,
+  buildSearchUrl,
+  searchBookmarks,
+  findExactBookmarkUrls,
+  searchBookmarkChoices,
+} from './search';
 import type { BookmarkNode } from '@/types';
 
 const tree: BookmarkNode = { id: 'root', title: 'R', children: [
@@ -59,5 +66,23 @@ describe('searchBookmarks', () => {
     const r = searchBookmarks(tree2 as never, 'jira', '0');
     expect(r.current.map((h) => h.id)).toEqual(['b2', 'b3', 'b4']);
     expect(r.others).toEqual([]);
+  });
+});
+
+describe('thumbnail bookmark matching', () => {
+  it('matches syntactically equivalent exact URLs without guessing by origin', () => {
+    expect(findExactBookmarkUrls(tree2 as never, 'https://github.com/')).toEqual(['https://github.com']);
+    expect(findExactBookmarkUrls(tree2 as never, 'https://jira.com/other')).toEqual([]);
+  });
+
+  it('fuzzy-searches all bookmarks by title and URL tokens and includes paths', () => {
+    const hits = searchBookmarkChoices(tree2 as never, 'jira sprint');
+    expect(hits.map((hit) => hit.id)).toEqual(['b3']);
+    expect(hits[0].path.map((part) => part.title)).toEqual(['书签栏', '工作', '项目A']);
+    expect(searchBookmarkChoices(tree2 as never, 'learn.com').map((hit) => hit.id)).toEqual(['b4']);
+  });
+
+  it('returns all bookmark choices for a blank query', () => {
+    expect(searchBookmarkChoices(tree2 as never, '')).toHaveLength(4);
   });
 });

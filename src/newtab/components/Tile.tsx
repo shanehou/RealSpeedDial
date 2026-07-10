@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { faviconUrl, firstLetter, colorFromString } from '@/lib/favicon';
+import { faviconUrl, firstLetter, colorFromString, hueFromString } from '@/lib/favicon';
 import type { TileStyle } from '@/types';
 
 interface Props {
@@ -14,21 +14,22 @@ interface Props {
 
 // 书签磁贴是真正的 <a>：浏览器原生在左下角显示网址，并支持中键/Cmd 点击、右键复制链接。
 // draggable=false 让 dnd-kit 的指针拖拽不被原生链接/图片拖拽劫持。
-export function Tile({ id, title, url, thumbnail, tileStyle = 'favicon', openInNewTab, onContextMenu }: Props) {
+export function Tile({ id, title, url, thumbnail, tileStyle = 'themeColor', openInNewTab, onContextMenu }: Props) {
   const [imgOk, setImgOk] = useState(true);
-  const themeMode = !thumbnail && (tileStyle === 'themeColor' || tileStyle === 'screenshot');
+  const screenshot = tileStyle === 'screenshot' ? thumbnail : undefined;
+  const themeMode = !screenshot;
   return (
     <a
-      className={`tile${thumbnail ? ' tile--shot' : ''}${themeMode ? ' tile--theme' : ''}`}
+      className={`tile${screenshot ? ' tile--shot' : ''}${themeMode ? ' tile--theme' : ''}`}
       href={url}
       target={openInNewTab ? '_blank' : undefined}
       rel={openInNewTab ? 'noopener noreferrer' : undefined}
       draggable={false}
-      style={themeMode ? { background: `linear-gradient(135deg, ${colorFromString(url)}, #262a3d)` } : undefined}
+      style={themeMode ? ({ ['--tile-hue']: hueFromString(url) } as React.CSSProperties) : undefined}
       onContextMenu={(e) => onContextMenu(e, id)}
       title={title}
     >
-      {thumbnail && <img src={thumbnail} alt="" className="tile__screenshot" draggable={false} />}
+      {screenshot && <img src={screenshot} alt="" className="tile__screenshot" draggable={false} />}
       <span className="tile__fav">
         {imgOk ? (
           <img src={faviconUrl(url, 32)} alt="" draggable={false} onError={() => setImgOk(false)} />

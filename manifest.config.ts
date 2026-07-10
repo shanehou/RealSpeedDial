@@ -12,7 +12,7 @@ export default defineManifest({
     48: 'icons/icon48.png',
     128: 'icons/icon128.png',
   },
-  permissions: ['bookmarks', 'storage', 'favicon'],
+  permissions: ['bookmarks', 'storage', 'favicon', 'contextMenus', 'activeTab'],
   optional_permissions: ['tabs'],
   optional_host_permissions: [
     '<all_urls>',

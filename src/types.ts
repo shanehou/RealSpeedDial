@@ -8,7 +8,7 @@ export interface BookmarkNode {
   children?: BookmarkNode[];
 }
 
-export type TileStyle = 'favicon' | 'themeColor' | 'screenshot';
+export type TileStyle = 'themeColor' | 'screenshot';
 
 export interface SpeedDialBookmark {
   kind: 'bookmark';
@@ -52,7 +52,7 @@ export type ThumbnailPolicy = 'always' | 'stale' | 'never';
 export type WallpaperSource = 'bing' | 'picsum' | 'unsplash';
 
 export type BackgroundSetting =
-  | { type: 'color'; value: string }
+  | { type: 'color'; light: string; dark: string } // 纯色背景分主题两套，随当前明暗主题选用
   | { type: 'wallpaper' }
   | { type: 'auto'; source: WallpaperSource };
 
@@ -78,15 +78,18 @@ export interface Settings {
   language: Language;
 }
 
+export const DEFAULT_BG_LIGHT = '#e8eaf0';
+export const DEFAULT_BG_DARK = '#2a2d3a';
+
 export const DEFAULT_SETTINGS: Settings = {
   rootFolderId: null,
-  tileStyle: 'favicon',
+  tileStyle: 'themeColor',
   thumbnailPolicy: 'stale',
   thumbnailStaleDays: 7,
   openInNewTab: false,
   restoreLastPosition: true,
   theme: 'system',
-  background: { type: 'color', value: '#1e2130' },
+  background: { type: 'color', light: DEFAULT_BG_LIGHT, dark: DEFAULT_BG_DARK },
   columns: 6,
   searchEngine: 'https://www.google.com/search?q=%s',
   language: 'auto',

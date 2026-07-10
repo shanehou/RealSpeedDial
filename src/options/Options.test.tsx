@@ -26,6 +26,8 @@ describe('Options', () => {
   it('changes tile style', async () => {
     render(<Options />);
     const select = await screen.findByLabelText('磁贴样式');
+    expect(screen.getAllByRole('option', { name: /图标 \+ 标题|网页截图/ })).toHaveLength(2);
+    expect(screen.queryByRole('option', { name: '主题色背景' })).not.toBeInTheDocument();
     await userEvent.selectOptions(select, 'themeColor');
     await waitFor(async () => {
       const got = await c.storage.sync.get(SETTINGS_KEY);

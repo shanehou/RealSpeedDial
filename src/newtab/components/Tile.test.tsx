@@ -26,17 +26,20 @@ describe('Tile', () => {
 
   it('renders the screenshot image when a thumbnail is provided', () => {
     const { container } = render(
-      <Tile id="b" title="GitHub" url="https://github.com" thumbnail="data:img" onContextMenu={() => {}} />,
+      <Tile id="b" title="GitHub" url="https://github.com" thumbnail="data:img" tileStyle="screenshot" onContextMenu={() => {}} />,
     );
     const shot = container.querySelector('img.tile__screenshot');
     expect(shot).toBeInTheDocument();
     expect(shot).toHaveAttribute('src', 'data:img');
   });
 
-  it('renders a small favicon in the corner by default', () => {
+  it('renders a small favicon over the URL-derived gradient by default', () => {
     const { container } = render(
       <Tile id="b" title="GitHub" url="https://github.com" onContextMenu={() => {}} />,
     );
+    const link = screen.getByRole('link', { name: /GitHub/ });
+    expect(link).toHaveClass('tile--theme');
+    expect(link.getAttribute('style')).toContain('--tile-hue');
     const fav = container.querySelector('.tile__fav img');
     expect(fav).toBeInTheDocument();
     expect(fav?.getAttribute('src')).toContain('/_favicon/');
@@ -54,14 +57,14 @@ describe('Tile', () => {
     expect(letter).toHaveClass('tile__fav-letter');
   });
 
-  it('applies a theme-color gradient background in themeColor style without a thumbnail', () => {
+  it('sets a per-site hue variable in themeColor style without a thumbnail', () => {
     render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="themeColor" onContextMenu={() => {}} />);
-    expect(screen.getByRole('link', { name: /GitHub/ }).getAttribute('style')).toContain('linear-gradient');
+    expect(screen.getByRole('link', { name: /GitHub/ }).getAttribute('style')).toContain('--tile-hue');
   });
 
-  it('does not add a gradient in favicon style', () => {
-    render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="favicon" onContextMenu={() => {}} />);
-    expect(screen.getByRole('link', { name: /GitHub/ }).getAttribute('style') ?? '').not.toContain('linear-gradient');
+  it('does not show a stale thumbnail outside screenshot style', () => {
+    const { container } = render(<Tile id="b" title="GitHub" url="https://github.com" thumbnail="data:img" tileStyle="themeColor" onContextMenu={() => {}} />);
+    expect(container.querySelector('img.tile__screenshot')).toBeNull();
   });
 
   it('adds the readable theme layer class in themeColor mode', () => {

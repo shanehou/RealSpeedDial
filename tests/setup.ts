@@ -25,8 +25,16 @@ function makeEvent() {
 export function installChromeMock() {
   const syncStore: Record<string, unknown> = {};
   const localStore: Record<string, unknown> = {};
+  const runtimeOnMessage = makeEvent();
   const chromeMock = {
-    runtime: { getURL: (p: string) => `chrome-extension://test${p}`, openOptionsPage: vi.fn(), lastError: undefined as unknown },
+    runtime: {
+      getURL: (p: string) => `chrome-extension://test/${p.replace(/^\//, '')}`,
+      openOptionsPage: vi.fn(),
+      lastError: undefined as unknown,
+      onMessage: runtimeOnMessage,
+      onInstalled: makeEvent(),
+      sendMessage: vi.fn(),
+    },
     bookmarks: {
       getTree: vi.fn(),
       getSubTree: vi.fn(),
@@ -49,6 +57,7 @@ export function installChromeMock() {
       local: {
         get: vi.fn(async (key: string) => ({ [key]: localStore[key] })),
         set: vi.fn(async (obj: Record<string, unknown>) => { Object.assign(localStore, obj); }),
+        remove: vi.fn(async (key: string) => { delete localStore[key]; }),
       },
       onChanged: makeEvent(),
     },
@@ -56,7 +65,23 @@ export function installChromeMock() {
       contains: vi.fn(async () => false),
       request: vi.fn(async () => true),
     },
-    tabs: { captureVisibleTab: vi.fn(), query: vi.fn(), create: vi.fn(), remove: vi.fn(), onUpdated: makeEvent() },
+    tabs: {
+      captureVisibleTab: vi.fn(),
+      query: vi.fn(),
+      create: vi.fn(),
+      remove: vi.fn(),
+      get: vi.fn(),
+      onUpdated: makeEvent(),
+      onActivated: makeEvent(),
+    },
+    contextMenus: {
+      create: vi.fn(),
+      update: vi.fn(),
+      removeAll: vi.fn(async () => undefined),
+      onClicked: makeEvent(),
+    },
+    windows: { create: vi.fn() },
+    action: { onClicked: makeEvent() },
   };
   vi.stubGlobal('chrome', chromeMock);
   return chromeMock;

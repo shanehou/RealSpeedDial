@@ -7,7 +7,7 @@ import { putAsset } from '@/lib/thumbnails';
 import { WALLPAPER_KEY } from '@/lib/constants';
 import { resolveLang, t as translate } from '@/lib/i18n';
 import { getUnsplashKey, setUnsplashKey, getDailyWallpaper } from '@/lib/wallpaper';
-import type { BookmarkNode, Settings, TileStyle, WallpaperSource } from '@/types';
+import { DEFAULT_BG_LIGHT, DEFAULT_BG_DARK, type BookmarkNode, type Settings, type TileStyle, type WallpaperSource } from '@/types';
 import { FolderTreeSelect } from './components/FolderTreeSelect';
 import './styles.css';
 
@@ -85,7 +85,6 @@ export default function Options() {
               await patch({ tileStyle: style });
             }}
           >
-            <option value="favicon">{t('options.tileFavicon')}</option>
             <option value="themeColor">{t('options.tileTheme')}</option>
             <option value="screenshot">{t('options.tileShot')}</option>
           </select>
@@ -141,7 +140,7 @@ export default function Options() {
                 if (!(await ensureWallpaperPermission('bing'))) return;
                 return void patch({ background: { type: 'auto', source: 'bing' } });
               }
-              void patch({ background: { type: 'color', value: '#1e2130' } });
+              void patch({ background: { type: 'color', light: DEFAULT_BG_LIGHT, dark: DEFAULT_BG_DARK } });
             }}
           >
             <option value="color">{t('options.bgColor')}</option>
@@ -149,12 +148,21 @@ export default function Options() {
             <option value="auto">{t('options.bgAuto')}</option>
           </select>
         </label>
-        {settings.background.type === 'color' && (
-          <label className="field">
-            <span>{t('options.bgColorLabel')}</span>
-            <input type="color" value={settings.background.value} onChange={(e) => void patch({ background: { type: 'color', value: e.target.value } })} />
-          </label>
-        )}
+        {settings.background.type === 'color' && (() => {
+          const bg = settings.background;
+          return (
+            <>
+              <label className="field">
+                <span>{t('options.bgColorLight')}</span>
+                <input type="color" value={bg.light} onChange={(e) => void patch({ background: { type: 'color', light: e.target.value, dark: bg.dark } })} />
+              </label>
+              <label className="field">
+                <span>{t('options.bgColorDark')}</span>
+                <input type="color" value={bg.dark} onChange={(e) => void patch({ background: { type: 'color', light: bg.light, dark: e.target.value } })} />
+              </label>
+            </>
+          );
+        })()}
         {settings.background.type === 'wallpaper' && (
           <label className="field">
             <span>{t('options.uploadWallpaper')}</span>

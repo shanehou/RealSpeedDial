@@ -89,6 +89,53 @@ describe('App navigation', () => {
     await waitFor(() => expect(c.bookmarks.create).toHaveBeenCalledWith({ parentId: 'f1', title: 'Wiki', url: 'https://wiki.com' }));
   });
 
+  it('writes into the resolved first child tab when the parent has no Home bookmarks', async () => {
+    const noHomeTree = { id: '0', title: '', children: [
+      { id: 'empty-parent', title: '父目录', children: [
+        { id: 'first-child', title: '默认子目录', children: [
+          { id: 'existing', title: 'Existing', url: 'https://existing.test', index: 0 },
+        ] },
+      ] },
+    ] };
+    await c.storage.sync.set({ [SETTINGS_KEY]: { rootFolderId: 'empty-parent' } });
+    c.bookmarks.getTree.mockResolvedValue([noHomeTree]);
+    c.bookmarks.create.mockResolvedValue({ id: 'newb' });
+
+    render(<App />);
+    await screen.findByText('Existing');
+    await userEvent.click(screen.getByTitle('新增书签'));
+    await userEvent.type(screen.getByLabelText('标题'), 'Wiki');
+    await userEvent.type(screen.getByLabelText('网址'), 'https://wiki.test');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+
+    await waitFor(() => expect(c.bookmarks.create).toHaveBeenCalledWith({
+      parentId: 'first-child',
+      title: 'Wiki',
+      url: 'https://wiki.test',
+    }));
+  });
+
+  it('adds a bookmark directly into a completely empty current folder', async () => {
+    const emptyTree = { id: '0', title: '', children: [
+      { id: 'empty', title: '空目录', children: [] },
+    ] };
+    await c.storage.sync.set({ [SETTINGS_KEY]: { rootFolderId: 'empty' } });
+    c.bookmarks.getTree.mockResolvedValue([emptyTree]);
+    c.bookmarks.create.mockResolvedValue({ id: 'newb' });
+
+    render(<App />);
+    await userEvent.click(await screen.findByRole('button', { name: '+ 新增书签' }));
+    await userEvent.type(screen.getByLabelText('标题'), 'First');
+    await userEvent.type(screen.getByLabelText('网址'), 'https://first.test');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+
+    await waitFor(() => expect(c.bookmarks.create).toHaveBeenCalledWith({
+      parentId: 'empty',
+      title: 'First',
+      url: 'https://first.test',
+    }));
+  });
+
   it('navigates back to an ancestor when a breadcrumb crumb is clicked', async () => {
     render(<App />);
     await screen.findByRole('tab', { name: '工作' });
