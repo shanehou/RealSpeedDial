@@ -10,7 +10,7 @@ interface Props {
   columns: number;
   thumbnails: Record<string, string>;
   tileStyle: TileStyle;
-  onOpen: (url: string) => void;
+  openInNewTab: boolean;
   onEnter: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, id: string) => void;
   onReorder: (activeId: string, fromIndex: number, toIndex: number) => void;
@@ -33,7 +33,7 @@ function SortableCell({ item, children }: { item: SpeedDialItem; children: React
   );
 }
 
-export function Grid({ items, columns, thumbnails, tileStyle, onOpen, onEnter, onContextMenu, onReorder, onMoveInto }: Props) {
+export function Grid({ items, columns, thumbnails, tileStyle, openInNewTab, onEnter, onContextMenu, onReorder, onMoveInto }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const handleDragEnd = (e: DragEndEvent) => {
@@ -54,7 +54,7 @@ export function Grid({ items, columns, thumbnails, tileStyle, onOpen, onEnter, o
           {items.map((it) => (
             <SortableCell key={it.id} item={it}>
               {it.kind === 'bookmark' ? (
-                <Tile id={it.id} title={it.title} url={it.url} thumbnail={thumbnails[it.url]} tileStyle={tileStyle} onOpen={onOpen} onContextMenu={onContextMenu} />
+                <Tile id={it.id} title={it.title} url={it.url} thumbnail={thumbnails[it.url]} tileStyle={tileStyle} openInNewTab={openInNewTab} onContextMenu={onContextMenu} />
               ) : (
                 <FolderTile id={it.id} title={it.title} preview={it.childrenPreview} onEnter={onEnter} onContextMenu={onContextMenu} />
               )}

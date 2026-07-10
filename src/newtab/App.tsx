@@ -98,11 +98,6 @@ export default function App() {
     return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [settings]);
 
-  const openUrl = useCallback((url: string) => {
-    if (settings?.openInNewTab) window.open(url, '_blank', 'noopener');
-    else window.location.href = url;
-  }, [settings]);
-
   const openOptions = useCallback(() => chrome.runtime.openOptionsPage(), []);
 
   const [query, setQuery] = useState('');
@@ -200,7 +195,7 @@ export default function App() {
             <div className="grid" style={{ ['--cols']: String(settings.columns) } as React.CSSProperties}>
               {searchResults.map((b) => (
                 <div className="grid__cell" key={b.id}>
-                  <Tile id={b.id} title={b.title} url={b.url} thumbnail={thumbnails[b.url]} tileStyle={settings.tileStyle} onOpen={openUrl} onContextMenu={openContextMenu} />
+                  <Tile id={b.id} title={b.title} url={b.url} thumbnail={thumbnails[b.url]} tileStyle={settings.tileStyle} openInNewTab={settings.openInNewTab} onContextMenu={openContextMenu} />
                 </div>
               ))}
             </div>
@@ -218,7 +213,7 @@ export default function App() {
               columns={settings.columns}
               thumbnails={thumbnails}
               tileStyle={settings.tileStyle}
-              onOpen={openUrl}
+              openInNewTab={settings.openInNewTab}
               onEnter={(id) => navigate(id, HOME_TAB_ID, true)}
               onContextMenu={openContextMenu}
               onReorder={handleReorder}

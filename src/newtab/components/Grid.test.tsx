@@ -14,14 +14,11 @@ const items: SpeedDialItem[] = [
 ];
 
 describe('Grid', () => {
-  it('renders bookmarks and folders, wires callbacks', async () => {
-    const onOpen = vi.fn();
+  it('renders bookmarks as links and folders trigger onEnter', async () => {
     const onEnter = vi.fn();
-    render(<Grid items={items} columns={6} thumbnails={{}} tileStyle="favicon" onOpen={onOpen} onEnter={onEnter} onContextMenu={() => {}} onReorder={() => {}} onMoveInto={() => {}} />);
-    // 磁贴外层 dnd 包裹 div 仅铺 listeners（不再带 role="button"）；按标签文本定位磁贴。
-    await userEvent.click(screen.getByText('GitHub'));
+    render(<Grid items={items} columns={6} thumbnails={{}} tileStyle="favicon" openInNewTab={false} onEnter={onEnter} onContextMenu={() => {}} onReorder={() => {}} onMoveInto={() => {}} />);
+    expect(screen.getByRole('link', { name: /GitHub/ })).toHaveAttribute('href', 'https://github.com');
     await userEvent.click(screen.getByText(/工作/));
-    expect(onOpen).toHaveBeenCalledWith('https://github.com');
     expect(onEnter).toHaveBeenCalledWith('f');
   });
 });

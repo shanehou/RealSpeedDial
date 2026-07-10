@@ -1,24 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { installChromeMock } from '../../../tests/setup';
 import { Tile } from './Tile';
 import { FolderTile } from './FolderTile';
+import userEvent from '@testing-library/user-event';
 
 beforeEach(() => { installChromeMock(); });
 
 describe('Tile', () => {
-  it('renders title and triggers onOpen', async () => {
-    const onOpen = vi.fn();
-    render(<Tile id="b" title="GitHub" url="https://github.com" onOpen={onOpen} onContextMenu={() => {}} />);
-    expect(screen.getByText('GitHub')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /GitHub/ }));
-    expect(onOpen).toHaveBeenCalledWith('https://github.com');
+  it('renders title and is a link to the url', () => {
+    render(<Tile id="b" title="GitHub" url="https://github.com" onContextMenu={() => {}} />);
+    const link = screen.getByRole('link', { name: /GitHub/ });
+    expect(link).toHaveAttribute('href', 'https://github.com');
+  });
+
+  it('opens in a new tab when openInNewTab is set', () => {
+    render(<Tile id="b" title="GitHub" url="https://github.com" openInNewTab onContextMenu={() => {}} />);
+    expect(screen.getByRole('link', { name: /GitHub/ })).toHaveAttribute('target', '_blank');
+  });
+
+  it('opens in the same tab by default (no target)', () => {
+    render(<Tile id="b" title="GitHub" url="https://github.com" onContextMenu={() => {}} />);
+    expect(screen.getByRole('link', { name: /GitHub/ })).not.toHaveAttribute('target');
   });
 
   it('renders the screenshot image when a thumbnail is provided', () => {
     const { container } = render(
-      <Tile id="b" title="GitHub" url="https://github.com" thumbnail="data:img" onOpen={() => {}} onContextMenu={() => {}} />,
+      <Tile id="b" title="GitHub" url="https://github.com" thumbnail="data:img" onContextMenu={() => {}} />,
     );
     const shot = container.querySelector('img.tile__screenshot');
     expect(shot).toBeInTheDocument();
@@ -27,7 +35,7 @@ describe('Tile', () => {
 
   it('renders a small favicon in the corner by default', () => {
     const { container } = render(
-      <Tile id="b" title="GitHub" url="https://github.com" onOpen={() => {}} onContextMenu={() => {}} />,
+      <Tile id="b" title="GitHub" url="https://github.com" onContextMenu={() => {}} />,
     );
     const fav = container.querySelector('.tile__fav img');
     expect(fav).toBeInTheDocument();
@@ -37,25 +45,23 @@ describe('Tile', () => {
 
   it('falls back to the first-letter block when the favicon fails to load', () => {
     const { container } = render(
-      <Tile id="b" title="GitHub" url="https://github.com" onOpen={() => {}} onContextMenu={() => {}} />,
+      <Tile id="b" title="GitHub" url="https://github.com" onContextMenu={() => {}} />,
     );
     const fav = container.querySelector('.tile__fav img');
-    expect(fav).toBeInTheDocument();
     fireEvent.error(fav!);
     expect(container.querySelector('.tile__fav img')).toBeNull();
     const letter = screen.getByText('G');
-    expect(letter).toBeInTheDocument();
     expect(letter).toHaveClass('tile__fav-letter');
   });
 
   it('applies a theme-color gradient background in themeColor style without a thumbnail', () => {
-    render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="themeColor" onOpen={() => {}} onContextMenu={() => {}} />);
-    expect(screen.getByRole('button', { name: /GitHub/ }).getAttribute('style')).toContain('linear-gradient');
+    render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="themeColor" onContextMenu={() => {}} />);
+    expect(screen.getByRole('link', { name: /GitHub/ }).getAttribute('style')).toContain('linear-gradient');
   });
 
   it('does not add a gradient in favicon style', () => {
-    render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="favicon" onOpen={() => {}} onContextMenu={() => {}} />);
-    expect(screen.getByRole('button', { name: /GitHub/ }).getAttribute('style') ?? '').not.toContain('linear-gradient');
+    render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="favicon" onContextMenu={() => {}} />);
+    expect(screen.getByRole('link', { name: /GitHub/ }).getAttribute('style') ?? '').not.toContain('linear-gradient');
   });
 });
 
