@@ -1,4 +1,5 @@
 import type { Crumb } from '@/types';
+import { useI18n } from '@/i18n';
 
 interface Props {
   crumbs: Crumb[];
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export function Breadcrumb({ crumbs, onGo }: Props) {
+  const { t } = useI18n();
   if (crumbs.length === 0) return null;
   return (
     <nav className="breadcrumb" aria-label="breadcrumb">
@@ -20,7 +22,7 @@ export function Breadcrumb({ crumbs, onGo }: Props) {
                 <path d="M5 10v10h14V10" />
               </svg>
             )}
-            {c.title}
+            {isHome ? (c.title || t('breadcrumb.root')) : c.title}
           </>
         );
         // 根（home）始终可点击返回首页；其余上级可点击；仅「非根的当前层」为不可点文本

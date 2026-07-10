@@ -89,4 +89,16 @@ describe('App navigation', () => {
     await userEvent.click(screen.getByRole('button', { name: '保存' }));
     await waitFor(() => expect(c.bookmarks.create).toHaveBeenCalledWith({ parentId: 'f1', title: 'Wiki', url: 'https://wiki.com' }));
   });
+
+  it('navigates back to an ancestor when a breadcrumb crumb is clicked', async () => {
+    render(<App />);
+    await screen.findByRole('tab', { name: '工作' });
+    await userEvent.click(screen.getByRole('tab', { name: '工作' }));
+    await userEvent.click(await screen.findByText('后端'));
+    await waitFor(() => expect(screen.getByText('MySQL')).toBeInTheDocument());
+    // 面包屑：书签 › 书签栏 › 工作 › 后端；点「书签栏」应回到其主页（GitHub 可见，MySQL 消失）
+    await userEvent.click(screen.getByRole('button', { name: '书签栏' }));
+    await waitFor(() => expect(screen.getByText('GitHub')).toBeInTheDocument());
+    expect(screen.queryByText('MySQL')).not.toBeInTheDocument();
+  });
 });
