@@ -1,5 +1,12 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
+import { Blob as NodeBlob, File as NodeFile } from 'node:buffer';
+
+// jsdom 的 Blob/File 无法被 Node 原生 structuredClone 序列化（会退化成 {}），
+// 导致 fake-indexeddb 存取 Blob 后类型丢失。真实浏览器 IndexedDB 无此问题。
+// 用 Node 原生（可结构化克隆）的实现替换，保证测试环境下 Blob 往返 IndexedDB 保真。
+globalThis.Blob = NodeBlob as unknown as typeof Blob;
+globalThis.File = NodeFile as unknown as typeof File;
 
 // i18n：把测试环境语言钉成中文，使现有中文断言在 language:'auto' 下稳定通过。
 // 需要 English 的用例请显式设置 settings.language='en'。
