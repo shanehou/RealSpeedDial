@@ -15,6 +15,7 @@ import { Guidance } from './components/Guidance';
 import { EditDialog, type EditMode } from './components/EditDialog';
 import { ContextMenu, type MenuAction } from './components/ContextMenu';
 import { SearchBar } from './components/SearchBar';
+import { Attribution } from './components/Attribution';
 import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookmark } from '@/lib/bookmarks';
 import { resolveMoveIndex } from '@/lib/reorder';
 import { searchBookmarks, buildSearchUrl } from '@/lib/search';
@@ -22,6 +23,8 @@ import { ensureCapturePermission } from '@/lib/permissions';
 import { resolveTheme } from '@/lib/theme';
 import { getAsset, deleteThumbnail } from '@/lib/thumbnails';
 import { WALLPAPER_KEY } from '@/lib/constants';
+import { getDailyWallpaper } from '@/lib/wallpaper';
+import type { WallpaperAttribution } from '@/types';
 import { I18nProvider } from '@/i18n';
 import { resolveLang, t as translate } from '@/lib/i18n';
 import './styles.css';
@@ -36,6 +39,7 @@ export default function App() {
 
   const [folderId, setFolderId] = useState<string | null>(null);
   const [tabId, setTabId] = useState<string>(HOME_TAB_ID);
+  const [attribution, setAttribution] = useState<WallpaperAttribution | null>(null);
 
   // 初始化：优先恢复 navState（若开启且仍有效），否则优雅回退到根；失效目录/Tab 不会白屏
   useEffect(() => {
@@ -79,20 +83,30 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // 应用主题与背景（纯色 / 壁纸图片）
+  // 应用主题与背景（纯色 / 上传壁纸 / 自动壁纸）
   useEffect(() => {
     if (!settings) return;
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true;
     document.documentElement.dataset.theme = resolveTheme(settings.theme, prefersDark);
     let cancelled = false;
     let objectUrl: string | null = null;
-    if (settings.background.type === 'color') {
-      document.body.style.background = settings.background.value;
-    } else {
+    const bg = settings.background;
+    if (bg.type === 'color') {
+      document.body.style.background = bg.value;
+      setAttribution(null);
+    } else if (bg.type === 'wallpaper') {
+      setAttribution(null);
       void getAsset(WALLPAPER_KEY).then((blob) => {
         if (cancelled || !blob) return;
         objectUrl = URL.createObjectURL(blob);
         document.body.style.background = `url(${objectUrl}) center/cover no-repeat fixed`;
+      });
+    } else {
+      void getDailyWallpaper(bg.source).then((res) => {
+        if (cancelled || !res) return;
+        objectUrl = URL.createObjectURL(res.blob);
+        document.body.style.background = `url(${objectUrl}) center/cover no-repeat fixed`;
+        setAttribution(res.attribution ?? null);
       });
     }
     return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
@@ -233,6 +247,7 @@ export default function App() {
           </svg>
         </button>
       </div>
+      {attribution && <Attribution data={attribution} />}
       {dialog && <EditDialog mode={dialog.mode} initial={dialog.initial} onSubmit={submitDialog} onCancel={() => setDialog(null)} />}
       {menu && <ContextMenu x={menu.x} y={menu.y} isFolder={menu.isFolder} onAction={handleMenuAction} onClose={() => setMenu(null)} />}
     </div>

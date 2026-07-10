@@ -95,3 +95,5 @@ html[data-theme="light"] .search__results { background: #fff; box-shadow: 0 4px 
 html[data-theme="light"] .search__result { color: #1c1e21; }
 html[data-theme="light"] .search__result:hover { background: #eef1f6; }
 html[data-theme="light"] .breadcrumb__current { color: #1c1e21; }
+.attribution { position: fixed; right: 12px; bottom: 12px; z-index: 40; font-size: 12px; color: rgba(255,255,255,.9); background: rgba(0,0,0,.4); padding: 4px 10px; border-radius: 8px; backdrop-filter: blur(4px); }
+.attribution a { color: #fff; text-decoration: underline; }
