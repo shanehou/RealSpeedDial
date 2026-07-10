@@ -17,8 +17,13 @@ export function resolveInitialNav(
   root: BookmarkNode,
   saved: NavState | null,
   restoreEnabled: boolean,
+  landingId?: string,
 ): NavState {
-  const fallback: NavState = { currentFolderId: root.id, selectedTabId: HOME_TAB_ID };
+  // 默认落地：优先配置目录；失效则回退到「书签栏」(id="1")；再退到整树根。
+  const landing = landingId && findNode(root, landingId)
+    ? landingId
+    : (findNode(root, '1') ? '1' : root.id);
+  const fallback: NavState = { currentFolderId: landing, selectedTabId: HOME_TAB_ID };
   if (!restoreEnabled || !saved) return fallback;
   const folder = findNode(root, saved.currentFolderId);
   if (!folder) return fallback;

@@ -31,7 +31,7 @@ export default function App() {
   const rootId = settings?.rootFolderId ?? null;
   const lang = resolveLang(settings?.language ?? 'auto');
   const t = useCallback((key: Parameters<typeof translate>[1], params?: Parameters<typeof translate>[2]) => translate(lang, key, params), [lang]);
-  const { root, loading } = useBookmarkTree(rootId);
+  const { root, loading } = useBookmarkTree();
   const { navState, persist, ready } = useNavState(settings?.restoreLastPosition ?? true);
 
   const [folderId, setFolderId] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export default function App() {
   // 初始化：优先恢复 navState（若开启且仍有效），否则优雅回退到根；失效目录/Tab 不会白屏
   useEffect(() => {
     if (!root || !ready || folderId !== null) return;
-    const init = resolveInitialNav(root, navState, settings?.restoreLastPosition ?? true);
+    const init = resolveInitialNav(root, navState, settings?.restoreLastPosition ?? true, rootId ?? undefined);
     setFolderId(init.currentFolderId);
     setTabId(init.selectedTabId);
     // 播种基础 history 条目，使首次按下浏览器后退键即可从当前位置正确回退

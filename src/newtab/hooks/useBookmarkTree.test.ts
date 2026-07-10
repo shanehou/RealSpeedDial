@@ -7,22 +7,17 @@ let c: ChromeMock;
 beforeEach(() => { c = installChromeMock(); });
 
 describe('useBookmarkTree', () => {
-  it('loads subtree for rootId', async () => {
-    c.bookmarks.getSubTree.mockResolvedValue([{ id: 'r', title: 'R', children: [] }]);
-    const { result } = renderHook(() => useBookmarkTree('r'));
-    await waitFor(() => expect(result.current.root?.id).toBe('r'));
+  it('loads the whole bookmark tree (root id 0)', async () => {
+    c.bookmarks.getTree.mockResolvedValue([{ id: '0', title: '', children: [] }]);
+    const { result } = renderHook(() => useBookmarkTree());
+    await waitFor(() => expect(result.current.root?.id).toBe('0'));
   });
   it('reloads on bookmark change event', async () => {
-    c.bookmarks.getSubTree.mockResolvedValue([{ id: 'r', title: 'R', children: [] }]);
-    const { result } = renderHook(() => useBookmarkTree('r'));
+    c.bookmarks.getTree.mockResolvedValue([{ id: '0', title: '', children: [{ id: '1', title: '书签栏', children: [] }] }]);
+    const { result } = renderHook(() => useBookmarkTree());
     await waitFor(() => expect(result.current.root).toBeTruthy());
-    c.bookmarks.getSubTree.mockResolvedValue([{ id: 'r', title: 'R2', children: [] }]);
+    c.bookmarks.getTree.mockResolvedValue([{ id: '0', title: '', children: [{ id: '1', title: 'BookmarksBar', children: [] }] }]);
     act(() => { c.bookmarks.onChanged._emit(); });
-    await waitFor(() => expect(result.current.root?.title).toBe('R2'));
-  });
-  it('handles null rootId as no-op', async () => {
-    const { result } = renderHook(() => useBookmarkTree(null));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.root).toBeNull();
+    await waitFor(() => expect(result.current.root?.children?.[0].title).toBe('BookmarksBar'));
   });
 });
