@@ -63,6 +63,11 @@ describe('Tile', () => {
     render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="favicon" onContextMenu={() => {}} />);
     expect(screen.getByRole('link', { name: /GitHub/ }).getAttribute('style') ?? '').not.toContain('linear-gradient');
   });
+
+  it('adds the readable theme layer class in themeColor mode', () => {
+    render(<Tile id="b" title="GitHub" url="https://github.com" tileStyle="themeColor" onContextMenu={() => {}} />);
+    expect(screen.getByRole('link', { name: /GitHub/ })).toHaveClass('tile--theme');
+  });
 });
 
 describe('FolderTile', () => {
