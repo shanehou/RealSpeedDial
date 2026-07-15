@@ -56,4 +56,14 @@ describe('ThumbnailPicker', () => {
     await waitFor(async () => expect(await getPendingCapture('capture-1')).toBeUndefined());
     expect(window.close).toHaveBeenCalled();
   });
+
+  it('carries the pending region onto the saved thumbnail', async () => {
+    await putPendingCapture('capture-2', { ...capture, region: { x: 0.1, y: 0.2, w: 0.3, h: 0.4 } });
+    render(<ThumbnailPicker captureId="capture-2" />);
+    await screen.findByText('选择缩略图对应的书签');
+    await userEvent.click(screen.getByRole('button', { name: /Jira Board.*jira\.test/ }));
+    await waitFor(async () => {
+      expect((await getThumbnail('https://jira.test/board'))?.region).toEqual({ x: 0.1, y: 0.2, w: 0.3, h: 0.4 });
+    });
+  });
 });

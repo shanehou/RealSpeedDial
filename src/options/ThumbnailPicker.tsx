@@ -47,7 +47,12 @@ export function ThumbnailPicker({ captureId }: { captureId: string }) {
     if (!capture || saving) return;
     setSaving(true);
     try {
-      await putThumbnail({ url: hit.url, dataUrl: capture.dataUrl, capturedAt: capture.capturedAt });
+      await putThumbnail({
+        url: hit.url,
+        dataUrl: capture.dataUrl,
+        capturedAt: capture.capturedAt,
+        ...(capture.region ? { region: capture.region } : {}),
+      });
       await deletePendingCapture(captureId);
       try {
         await chrome.runtime.sendMessage({ type: 'thumbnail-updated', urls: [hit.url] });
