@@ -69,7 +69,8 @@ async function maybeAutoCapture(tab: chrome.tabs.Tab): Promise<void> {
   const existing = await Promise.all(targets.map(getThumbnail));
   if (!existing.some((record) => shouldCapture(settings.thumbnailPolicy, record?.capturedAt, settings.thumbnailStaleDays, now))) return;
   const dataUrl = await captureVisibleData(tab.windowId, tab.id, tab.url);
-  await storeCapture(targets, dataUrl);
+  const reuseRegion = existing.find((record) => record?.region)?.region;
+  await storeCapture(targets, dataUrl, reuseRegion);
 }
 
 // 自动抓取：既覆盖新加载完成的活动页，也覆盖用户切回的已加载书签页。
@@ -190,7 +191,8 @@ chrome.runtime.onMessage.addListener((msg: RsdMessage, _sender, sendResponse: (r
       if (msg.type === 'save-current-as') {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) throw new Error('No active tab');
-        await storeCapture([msg.url], await captureVisibleData(tab.windowId, tab.id, tab.url));
+        const region = (await getThumbnail(msg.url))?.region;
+        await storeCapture([msg.url], await captureVisibleData(tab.windowId, tab.id, tab.url), region);
       } else if (msg.type === 'capture-url') {
         const tab = await chrome.tabs.create({ url: msg.url, active: true });
         if (!tab.id) throw new Error('Could not create capture tab');
@@ -207,7 +209,8 @@ chrome.runtime.onMessage.addListener((msg: RsdMessage, _sender, sendResponse: (r
             chrome.tabs.onUpdated.addListener(listener);
           });
           const loaded = await chrome.tabs.get(tab.id);
-          await storeCapture([msg.url], await captureVisibleData(loaded.windowId, tab.id, loaded.url));
+          const region = (await getThumbnail(msg.url))?.region;
+          await storeCapture([msg.url], await captureVisibleData(loaded.windowId, tab.id, loaded.url), region);
         } finally {
           await chrome.tabs.remove(tab.id);
         }

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { installChromeMock, type ChromeMock } from '../../tests/setup';
 import { SETTINGS_KEY } from '@/lib/constants';
-import { getPendingCapture, getThumbnail } from '@/lib/thumbnails';
+import { getPendingCapture, getThumbnail, putThumbnail } from '@/lib/thumbnails';
 
 const MENU_ID = 'save-current-page-thumbnail';
 
@@ -167,5 +167,17 @@ describe('service worker thumbnail capture', () => {
     expect(await getThumbnail('https://github.com')).toBeUndefined();
     expect(c.scripting.executeScript).toHaveBeenCalled();
     expect(c.windows.create).not.toHaveBeenCalled();
+  });
+
+  it('reuses the stored region on automatic re-capture', async () => {
+    await putThumbnail({ url: 'https://github.com', dataUrl: 'old', capturedAt: 1, region: { x: 0.2, y: 0.2, w: 0.3, h: 0.3 } });
+    await boot();
+    c.tabs.onActivated._emit({ tabId: tab.id, windowId: tab.windowId });
+
+    await vi.waitFor(async () => {
+      const rec = await getThumbnail('https://github.com');
+      expect(rec?.dataUrl).toBe('data:image/jpeg;base64,current');
+      expect(rec?.region).toEqual({ x: 0.2, y: 0.2, w: 0.3, h: 0.3 });
+    });
   });
 });
