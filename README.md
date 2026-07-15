@@ -14,6 +14,7 @@ A true Vivaldi-style Speed Dial for Chrome (Manifest V3): it takes over the new 
 - **Real-link tiles**: hover shows the target URL in the browser status bar; middle/Cmd-click opens a new tab; right-click gives the in-app menu.
 - **Tile styles**: Icon + title with a stable URL-derived gradient, or screenshot with a readable text layer.
 - **Screenshot control**: thumbnails update when a bookmarked page is visited; the browser page context menu can capture the exact state you like. If the current URL is not bookmarked, a searchable picker lets you choose the target bookmark.
+- **Region capture**: right-click any page and choose "Capture a region as thumbnail" to draw and fine-tune a region (drag corners/edges, move, Enter to confirm) that the tile magnifies.
 - **Auto-updating wallpaper**: Bing daily / Lorem Picsum / Unsplash (bring your own key), one per day, cached for offline, sized to your screen with `cover` (no stretching).
 - **Bilingual UI** (English / 中文): follows the browser language by default, switchable in Settings.
 - **Appearance**: dark / light / system theme, solid color or wallpaper background, adjustable columns, and last-position memory.
@@ -51,6 +52,7 @@ Upload `real-speed-dial.zip` to the [Chrome Web Store Developer Dashboard](https
 | `storage` | settings & nav state | install |
 | `favicon` | show site icons | install |
 | `contextMenus` + `activeTab` | capture the currently visible page from its browser context menu | install |
+| `scripting` | inject the region-selection overlay into the current tab on demand (paired with `activeTab`; no host permission prompt) | install |
 | `tabs` + `<all_urls>` | screenshot thumbnails (`captureVisibleTab`) | **requested on demand** (screenshot style / manual refresh) |
 | host perms for `bing.com` / `picsum.photos` / `api.unsplash.com` / `images.unsplash.com` | fetch the daily wallpaper | **requested on demand** (when Auto wallpaper is enabled) |
 
