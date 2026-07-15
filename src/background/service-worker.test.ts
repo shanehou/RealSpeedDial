@@ -180,4 +180,16 @@ describe('service worker thumbnail capture', () => {
       expect(rec?.region).toEqual({ x: 0.2, y: 0.2, w: 0.3, h: 0.3 });
     });
   });
+
+  it('reuses the stored region when saving the current page as a thumbnail', async () => {
+    await putThumbnail({ url: 'https://github.com', dataUrl: 'old', capturedAt: 1, region: { x: 0.15, y: 0.25, w: 0.3, h: 0.35 } });
+    await boot();
+    c.runtime.onMessage._emit({ type: 'save-current-as', url: 'https://github.com' }, {}, () => {});
+
+    await vi.waitFor(async () => {
+      const rec = await getThumbnail('https://github.com');
+      expect(rec?.dataUrl).toBe('data:image/jpeg;base64,current');
+      expect(rec?.region).toEqual({ x: 0.15, y: 0.25, w: 0.3, h: 0.35 });
+    });
+  });
 });

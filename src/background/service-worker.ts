@@ -69,6 +69,7 @@ async function maybeAutoCapture(tab: chrome.tabs.Tab): Promise<void> {
   const existing = await Promise.all(targets.map(getThumbnail));
   if (!existing.some((record) => shouldCapture(settings.thumbnailPolicy, record?.capturedAt, settings.thumbnailStaleDays, now))) return;
   const dataUrl = await captureVisibleData(tab.windowId, tab.id, tab.url);
+  // 多个精确匹配书签共享同一张截图；沿用首个已存焦点区域即可（可接受近似）
   const reuseRegion = existing.find((record) => record?.region)?.region;
   await storeCapture(targets, dataUrl, reuseRegion);
 }
@@ -191,8 +192,8 @@ chrome.runtime.onMessage.addListener((msg: RsdMessage, _sender, sendResponse: (r
       if (msg.type === 'save-current-as') {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) throw new Error('No active tab');
-        const region = (await getThumbnail(msg.url))?.region;
-        await storeCapture([msg.url], await captureVisibleData(tab.windowId, tab.id, tab.url), region);
+        const reuseRegion = (await getThumbnail(msg.url))?.region;
+        await storeCapture([msg.url], await captureVisibleData(tab.windowId, tab.id, tab.url), reuseRegion);
       } else if (msg.type === 'capture-url') {
         const tab = await chrome.tabs.create({ url: msg.url, active: true });
         if (!tab.id) throw new Error('Could not create capture tab');
@@ -209,8 +210,8 @@ chrome.runtime.onMessage.addListener((msg: RsdMessage, _sender, sendResponse: (r
             chrome.tabs.onUpdated.addListener(listener);
           });
           const loaded = await chrome.tabs.get(tab.id);
-          const region = (await getThumbnail(msg.url))?.region;
-          await storeCapture([msg.url], await captureVisibleData(loaded.windowId, tab.id, loaded.url), region);
+          const reuseRegion = (await getThumbnail(msg.url))?.region;
+          await storeCapture([msg.url], await captureVisibleData(loaded.windowId, tab.id, loaded.url), reuseRegion);
         } finally {
           await chrome.tabs.remove(tab.id);
         }
