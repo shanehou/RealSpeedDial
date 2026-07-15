@@ -44,4 +44,18 @@ describe('computeFocusBackground', () => {
     const out = computeFocusBackground({ x: 0, y: 0, w: 1, h: 0.9 }, 1, 3);
     expect(out.backgroundSize).toBe('cover');
   });
+  it('magnifies a tall sub-region (Ar < Ac branch) and positions it', () => {
+    // region 0.2×0.4，图 1:1 放进 2:1 磁贴 → Ar=0.5<Ac=2 → 以高为准：Vh=0.4, Vw=0.8
+    const out = computeFocusBackground({ x: 0.4, y: 0.3, w: 0.2, h: 0.4 }, 1, 2);
+    expect(out.backgroundSize).toBe('125% auto'); // 100/0.8
+    expect(out.backgroundPositionX).toBe('50%');  // Vx=0.1 → 0.1/(1-0.8)
+    expect(out.backgroundPositionY).toBe('50%');  // Vy=0.3 → 0.3/(1-0.4)
+  });
+  it('clamps the viewport back inside when the ideal center would overflow the left edge', () => {
+    // region 贴左边 x=0，Ar=0.5<Ac=2 → Vh=0.2, Vw=0.4；理想 Vx=0.05-0.2=-0.15 被 clamp 到 0
+    const out = computeFocusBackground({ x: 0, y: 0.4, w: 0.1, h: 0.2 }, 1, 2);
+    expect(out.backgroundSize).toBe('250% auto'); // 100/0.4
+    expect(out.backgroundPositionX).toBe('0%');   // Vx clamped 0 → 0/(1-0.4)
+    expect(out.backgroundPositionY).toBe('50%');  // Vy=0.4 → 0.4/(1-0.2)
+  });
 });
