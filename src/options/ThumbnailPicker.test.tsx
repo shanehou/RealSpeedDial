@@ -40,6 +40,7 @@ describe('ThumbnailPicker', () => {
 
     await waitFor(async () => {
       expect((await getThumbnail('https://jira.test/board'))?.dataUrl).toBe(capture.dataUrl);
+      expect((await getThumbnail('https://jira.test/board'))?.region).toBeUndefined();
     });
     expect(await getPendingCapture('capture-1')).toBeUndefined();
     expect(c.runtime.sendMessage).toHaveBeenCalledWith({
