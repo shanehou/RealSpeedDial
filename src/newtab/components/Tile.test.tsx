@@ -24,13 +24,13 @@ describe('Tile', () => {
     expect(screen.getByRole('link', { name: /GitHub/ })).not.toHaveAttribute('target');
   });
 
-  it('renders the screenshot image when a thumbnail is provided', () => {
+  it('renders the screenshot as a background layer when a thumbnail is provided', () => {
     const { container } = render(
       <Tile id="b" title="GitHub" url="https://github.com" thumbnail="data:img" tileStyle="screenshot" onContextMenu={() => {}} />,
     );
-    const shot = container.querySelector('img.tile__screenshot');
+    const shot = container.querySelector('.tile__screenshot') as HTMLElement;
     expect(shot).toBeInTheDocument();
-    expect(shot).toHaveAttribute('src', 'data:img');
+    expect(shot.style.backgroundImage).toContain('data:img');
   });
 
   it('renders a small favicon over the URL-derived gradient by default', () => {
@@ -43,7 +43,7 @@ describe('Tile', () => {
     const fav = container.querySelector('.tile__fav img');
     expect(fav).toBeInTheDocument();
     expect(fav?.getAttribute('src')).toContain('/_favicon/');
-    expect(container.querySelector('img.tile__screenshot')).toBeNull();
+    expect(container.querySelector('.tile__screenshot')).toBeNull();
   });
 
   it('falls back to the first-letter block when the favicon fails to load', () => {
@@ -64,7 +64,7 @@ describe('Tile', () => {
 
   it('does not show a stale thumbnail outside screenshot style', () => {
     const { container } = render(<Tile id="b" title="GitHub" url="https://github.com" thumbnail="data:img" tileStyle="themeColor" onContextMenu={() => {}} />);
-    expect(container.querySelector('img.tile__screenshot')).toBeNull();
+    expect(container.querySelector('.tile__screenshot')).toBeNull();
   });
 
   it('adds the readable theme layer class in themeColor mode', () => {
