@@ -17,6 +17,7 @@ interface Props {
 const COVER: FocusBackground = { backgroundSize: 'cover', backgroundPositionX: 'center', backgroundPositionY: 'center' };
 
 // 书签磁贴是真正的 <a>：浏览器原生在左下角显示网址，并支持中键/Cmd 点击、右键复制链接。
+// draggable=false 让 dnd-kit 的指针拖拽不被原生链接/图片拖拽劫持。
 export function Tile({ id, title, url, thumbnail, region, tileStyle = 'themeColor', openInNewTab, onContextMenu }: Props) {
   const [imgOk, setImgOk] = useState(true);
   const screenshot = tileStyle === 'screenshot' ? thumbnail : undefined;
@@ -28,11 +29,12 @@ export function Tile({ id, title, url, thumbnail, region, tileStyle = 'themeColo
   useEffect(() => {
     const el = shotRef.current;
     if (!screenshot || !el) return;
+    let cancelled = false;
     let aspect = 0;
     const recompute = () => {
       const cw = el.clientWidth;
       const ch = el.clientHeight;
-      if (!aspect || !cw || !ch) return;
+      if (cancelled || !aspect || !cw || !ch) return;
       setFocus(computeFocusBackground(region ?? FULL_REGION, aspect, cw / ch));
     };
     const img = new Image();
@@ -40,7 +42,7 @@ export function Tile({ id, title, url, thumbnail, region, tileStyle = 'themeColo
     img.src = screenshot;
     const ro = new ResizeObserver(recompute);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => { cancelled = true; img.onload = null; ro.disconnect(); };
   }, [screenshot, region?.x, region?.y, region?.w, region?.h]);
 
   return (
@@ -59,7 +61,7 @@ export function Tile({ id, title, url, thumbnail, region, tileStyle = 'themeColo
           ref={shotRef}
           className="tile__screenshot"
           style={{
-            backgroundImage: `url(${screenshot})`,
+            backgroundImage: `url("${screenshot}")`,
             backgroundSize: focus.backgroundSize,
             backgroundPositionX: focus.backgroundPositionX,
             backgroundPositionY: focus.backgroundPositionY,
