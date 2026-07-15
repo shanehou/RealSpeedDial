@@ -119,4 +119,34 @@ describe('service worker thumbnail capture', () => {
     const captureId = new URL(createArg.url).searchParams.get('thumbnailPicker')!;
     await vi.waitFor(async () => expect(await getPendingCapture(captureId)).toBeUndefined());
   });
+
+  it('registers the region capture menu', async () => {
+    await boot();
+    await vi.waitFor(() => expect(c.contextMenus.create).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'capture-region-thumbnail', contexts: ['all'] }),
+      expect.any(Function),
+    ));
+  });
+
+  it('captures a selected region and stores a normalized region for an exact bookmark', async () => {
+    c.scripting.executeScript.mockResolvedValue([{ result: { x: 100, y: 80, w: 200, h: 160, viewW: 1000, viewH: 800 } }]);
+    await boot();
+    c.contextMenus.onClicked._emit({ menuItemId: 'capture-region-thumbnail' }, tab);
+
+    await vi.waitFor(async () => {
+      const rec = await getThumbnail('https://github.com');
+      expect(rec?.dataUrl).toBe('data:image/jpeg;base64,current');
+      expect(rec?.region).toEqual({ x: 0.1, y: 0.1, w: 0.2, h: 0.2 });
+    });
+  });
+
+  it('stores nothing when region selection is cancelled', async () => {
+    c.scripting.executeScript.mockResolvedValue([{ result: null }]);
+    await boot();
+    c.contextMenus.onClicked._emit({ menuItemId: 'capture-region-thumbnail' }, tab);
+
+    await vi.waitFor(() => expect(c.tabs.captureVisibleTab).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 0));
+    expect(await getThumbnail('https://github.com')).toBeUndefined();
+  });
 });

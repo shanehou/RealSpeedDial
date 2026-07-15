@@ -5,10 +5,14 @@ import { shouldCapture } from '@/lib/capturePolicy';
 import { findExactBookmarkUrls, normalizePageUrl } from '@/lib/search';
 import type { RsdMessage, RsdResponse } from '@/lib/messages';
 import { resolveLang, t } from '@/lib/i18n';
+import { normalizeRect, isRegionTooSmall } from '@/lib/thumbFocus';
+import { selectRegionOverlay, type OverlayResult } from './regionOverlay';
+import type { NormalizedRegion } from '@/types';
 import { createCaptureQueue } from './captureQueue';
 
 const MIN_INTERVAL_MS = 1100; // captureVisibleTab 频率限制约 1/s
 const CAPTURE_MENU_ID = 'save-current-page-thumbnail';
+const REGION_MENU_ID = 'capture-region-thumbnail';
 const captureQueue = createCaptureQueue(MIN_INTERVAL_MS);
 
 async function hasCapturePermission(): Promise<boolean> {
@@ -42,10 +46,10 @@ async function broadcastThumbnailUpdate(urls: string[]): Promise<void> {
   try { await chrome.runtime.sendMessage({ type: 'thumbnail-updated', urls } satisfies RsdMessage); } catch { /* no open extension page */ }
 }
 
-async function storeCapture(urls: string[], dataUrl: string): Promise<void> {
+async function storeCapture(urls: string[], dataUrl: string, region?: NormalizedRegion): Promise<void> {
   const unique = [...new Set(urls)];
   const capturedAt = Date.now();
-  await Promise.all(unique.map((url) => putThumbnail({ url, dataUrl, capturedAt })));
+  await Promise.all(unique.map((url) => putThumbnail({ url, dataUrl, capturedAt, ...(region ? { region } : {}) })));
   await broadcastThumbnailUpdate(unique);
 }
 
@@ -79,23 +83,22 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
     .catch((e) => console.warn('[RSD] activated capture failed', e));
 });
 
-async function ensureCaptureMenu(): Promise<void> {
-  const settings = await loadSettings();
+async function ensureMenuItem(id: string, title: string): Promise<void> {
   const properties: Omit<chrome.contextMenus.CreateProperties, 'id'> = {
-    title: t(resolveLang(settings.language), 'context.captureCurrent'),
+    title,
     contexts: ['all'],
     documentUrlPatterns: ['http://*/*', 'https://*/*'],
   };
   const exists = await new Promise<boolean>((resolve) => {
-    chrome.contextMenus.update(CAPTURE_MENU_ID, properties, () => {
+    chrome.contextMenus.update(id, properties, () => {
       const error = chrome.runtime.lastError;
-      if (error) void error.message; // Reading lastError suppresses Chrome's unchecked-error warning.
+      if (error) void error.message; // 读取 lastError 抑制未处理告警
       resolve(!error);
     });
   });
   if (exists) return;
   await new Promise<void>((resolve, reject) => {
-    chrome.contextMenus.create({ id: CAPTURE_MENU_ID, ...properties }, () => {
+    chrome.contextMenus.create({ id, ...properties }, () => {
       const error = chrome.runtime.lastError;
       if (error) reject(new Error(error.message));
       else resolve();
@@ -103,9 +106,16 @@ async function ensureCaptureMenu(): Promise<void> {
   });
 }
 
+async function ensureMenus(): Promise<void> {
+  const settings = await loadSettings();
+  const lang = resolveLang(settings.language);
+  await ensureMenuItem(CAPTURE_MENU_ID, t(lang, 'context.captureCurrent'));
+  await ensureMenuItem(REGION_MENU_ID, t(lang, 'context.captureRegion'));
+}
+
 let menuRegistration = Promise.resolve();
 function scheduleCaptureMenuRegistration(): void {
-  menuRegistration = menuRegistration.then(ensureCaptureMenu, ensureCaptureMenu);
+  menuRegistration = menuRegistration.then(ensureMenus, ensureMenus);
   void menuRegistration.catch((e) => console.warn('[RSD] context menu registration failed', e));
 }
 
@@ -115,34 +125,61 @@ chrome.runtime.onInstalled.addListener(() => {
 // Self-heal a missing menu when the service worker starts (e.g. enable/reload edge cases).
 scheduleCaptureMenuRegistration();
 
+async function storeOrPickCapture(pageUrl: string, dataUrl: string, region?: NormalizedRegion): Promise<void> {
+  const targets = await exactBookmarkUrls(pageUrl);
+  if (targets.length > 0) {
+    await storeCapture(targets, dataUrl, region);
+    return;
+  }
+  const captureId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  await putPendingCapture(captureId, { sourceUrl: pageUrl, dataUrl, capturedAt: Date.now(), ...(region ? { region } : {}) });
+  try {
+    await chrome.windows.create({
+      url: chrome.runtime.getURL(`src/options/index.html?thumbnailPicker=${encodeURIComponent(captureId)}`),
+      type: 'popup',
+      width: 680,
+      height: 600,
+    });
+  } catch (e) {
+    await deletePendingCapture(captureId);
+    throw e;
+  }
+}
+
+async function runRegionOverlay(tabId: number): Promise<NormalizedRegion | null> {
+  const [res] = await chrome.scripting.executeScript({ target: { tabId }, func: selectRegionOverlay });
+  const out = res?.result as OverlayResult | null | undefined;
+  if (!out || isRegionTooSmall(out)) return null;
+  return normalizeRect(out, out.viewW, out.viewH);
+}
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId !== CAPTURE_MENU_ID || !tab?.active || !tab.url || tab.id === undefined) return;
+  if (!tab?.active || !tab.url || tab.id === undefined) return;
   const { id: tabId, url: pageUrl, windowId } = tab;
-  void (async () => {
-    try {
-      const dataUrl = await captureVisibleData(windowId, tabId, pageUrl);
-      const targets = await exactBookmarkUrls(pageUrl);
-      if (targets.length > 0) {
-        await storeCapture(targets, dataUrl);
-        return;
-      }
-      const captureId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-      await putPendingCapture(captureId, { sourceUrl: pageUrl, dataUrl, capturedAt: Date.now() });
+  if (info.menuItemId === CAPTURE_MENU_ID) {
+    void (async () => {
       try {
-        await chrome.windows.create({
-          url: chrome.runtime.getURL(`src/options/index.html?thumbnailPicker=${encodeURIComponent(captureId)}`),
-          type: 'popup',
-          width: 680,
-          height: 600,
-        });
+        const dataUrl = await captureVisibleData(windowId, tabId, pageUrl);
+        await storeOrPickCapture(pageUrl, dataUrl);
       } catch (e) {
-        await deletePendingCapture(captureId);
-        throw e;
+        console.warn('[RSD] current-page capture failed', e);
       }
-    } catch (e) {
-      console.warn('[RSD] current-page capture failed', e);
-    }
-  })();
+    })();
+    return;
+  }
+  if (info.menuItemId === REGION_MENU_ID) {
+    void (async () => {
+      try {
+        // 先截干净的可见页，再注入遮罩取焦点区域（遮罩期间锁滚动，坐标与截图对齐）
+        const dataUrl = await captureVisibleData(windowId, tabId, pageUrl);
+        const region = await runRegionOverlay(tabId);
+        if (!region) return; // 用户取消
+        await storeOrPickCapture(pageUrl, dataUrl, region);
+      } catch (e) {
+        console.warn('[RSD] region capture failed', e);
+      }
+    })();
+  }
 });
 
 // 手动抓取：接受来自新标签页/设置页的消息
