@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { SpeedDialItem, TileStyle } from '@/types';
+import type { SpeedDialItem, TileStyle, ThumbnailRecord } from '@/types';
 import { Tile } from './Tile';
 import { FolderTile } from './FolderTile';
 import { createDragClickGuard } from '@/lib/dragClickGuard';
@@ -10,7 +10,7 @@ import { createDragClickGuard } from '@/lib/dragClickGuard';
 interface Props {
   items: SpeedDialItem[];
   columns: number;
-  thumbnails: Record<string, string>;
+  thumbnails: Record<string, ThumbnailRecord>;
   tileStyle: TileStyle;
   openInNewTab: boolean;
   onEnter: (id: string) => void;
@@ -64,7 +64,7 @@ export function Grid({ items, columns, thumbnails, tileStyle, openInNewTab, onEn
           {items.map((it) => (
             <SortableCell key={it.id} item={it}>
               {it.kind === 'bookmark' ? (
-                <Tile id={it.id} title={it.title} url={it.url} thumbnail={thumbnails[it.url]} tileStyle={tileStyle} openInNewTab={openInNewTab} onContextMenu={onContextMenu} />
+                <Tile id={it.id} title={it.title} url={it.url} thumbnail={thumbnails[it.url]?.dataUrl} region={thumbnails[it.url]?.region} tileStyle={tileStyle} openInNewTab={openInNewTab} onContextMenu={onContextMenu} />
               ) : (
                 <FolderTile id={it.id} title={it.title} preview={it.childrenPreview} onEnter={onEnter} onContextMenu={onContextMenu} />
               )}

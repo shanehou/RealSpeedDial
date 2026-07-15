@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { getThumbnail } from '@/lib/thumbnails';
-import type { TileStyle } from '@/types';
+import type { ThumbnailRecord, TileStyle } from '@/types';
 import type { RsdMessage } from '@/lib/messages';
 
-// 仅在「网页截图」样式下从 IndexedDB 读取缩略图；其他样式返回空表（走 favicon/主题色）。
+// 仅在「网页截图」样式下从 IndexedDB 读取缩略图记录（含焦点区域）；其他样式返回空表（走 favicon/主题色）。
 // refreshKey 变化时强制重读（用于手动刷新缩略图后即时更新，无需刷新页面）。
-export function useThumbnails(urls: string[], style: TileStyle, refreshKey = 0): Record<string, string> {
-  const [map, setMap] = useState<Record<string, string>>({});
+export function useThumbnails(urls: string[], style: TileStyle, refreshKey = 0): Record<string, ThumbnailRecord> {
+  const [map, setMap] = useState<Record<string, ThumbnailRecord>>({});
   const [backgroundRevision, setBackgroundRevision] = useState(0);
   const key = urls.join('|');
 
@@ -25,10 +25,10 @@ export function useThumbnails(urls: string[], style: TileStyle, refreshKey = 0):
     if (style !== 'screenshot') { setMap({}); return; }
     let cancelled = false;
     void (async () => {
-      const next: Record<string, string> = {};
+      const next: Record<string, ThumbnailRecord> = {};
       for (const u of urls) {
         const rec = await getThumbnail(u);
-        if (rec) next[u] = rec.dataUrl;
+        if (rec) next[u] = rec;
       }
       if (!cancelled) setMap(next);
     })();

@@ -12,7 +12,7 @@ describe('useThumbnails', () => {
   it('loads thumbnails for given urls when style is screenshot', async () => {
     await putThumbnail({ url: 'https://a.com', dataUrl: 'data:img', capturedAt: 1 });
     const { result } = renderHook(() => useThumbnails(['https://a.com'], 'screenshot'));
-    await waitFor(() => expect(result.current['https://a.com']).toBe('data:img'));
+    await waitFor(() => expect(result.current['https://a.com']?.dataUrl).toBe('data:img'));
   });
   it('returns empty map when style is not screenshot', async () => {
     await putThumbnail({ url: 'https://a.com', dataUrl: 'data:img', capturedAt: 1 });
@@ -29,6 +29,6 @@ describe('useThumbnails', () => {
       c.runtime.onMessage._emit({ type: 'thumbnail-updated', urls: [url] });
     });
 
-    await waitFor(() => expect(result.current[url]).toBe('data:new'));
+    await waitFor(() => expect(result.current[url]?.dataUrl).toBe('data:new'));
   });
 });
