@@ -100,8 +100,17 @@ export interface NavState {
   selectedTabId: string;
 }
 
+// 归一化焦点区域：均为 0~1，相对「当前可见页」截图
+export interface NormalizedRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface ThumbnailRecord {
   url: string;
-  dataUrl: string;
+  dataUrl: string; // 始终是「当前可见页」整页截图
   capturedAt: number;
+  region?: NormalizedRegion; // 缺省 = 全图 {0,0,1,1}（旧数据 / 整页截图）
 }

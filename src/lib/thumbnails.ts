@@ -1,10 +1,11 @@
 import { THUMB_DB_NAME, THUMB_DB_VERSION, THUMB_STORE, ASSET_STORE } from './constants';
-import type { ThumbnailRecord } from '@/types';
+import type { NormalizedRegion, ThumbnailRecord } from '@/types';
 
 export interface PendingThumbnailCapture {
   sourceUrl: string;
   dataUrl: string;
   capturedAt: number;
+  region?: NormalizedRegion;
 }
 
 const PENDING_CAPTURE_PREFIX = 'pending-thumbnail:';
