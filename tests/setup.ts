@@ -8,6 +8,13 @@ import { Blob as NodeBlob, File as NodeFile } from 'node:buffer';
 globalThis.Blob = NodeBlob as unknown as typeof Blob;
 globalThis.File = NodeFile as unknown as typeof File;
 
+// jsdom 无 ResizeObserver；提供最小 stub，回调不自动触发（组件初始渲染即用 cover 兜底）。
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 // i18n：把测试环境语言钉成中文，使现有中文断言在 language:'auto' 下稳定通过。
 // 需要 English 的用例请显式设置 settings.language='en'。
 Object.defineProperty(globalThis.navigator, 'language', { value: 'zh-CN', configurable: true });
@@ -81,6 +88,7 @@ export function installChromeMock() {
       onClicked: makeEvent(),
     },
     windows: { create: vi.fn() },
+    scripting: { executeScript: vi.fn() },
     action: { onClicked: makeEvent() },
   };
   vi.stubGlobal('chrome', chromeMock);
