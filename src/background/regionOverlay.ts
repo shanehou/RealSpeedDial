@@ -7,6 +7,7 @@ export interface OverlayResult {
   viewH: number;
 }
 
+// 注意：本函数经 func.toString() 序列化后注入页面执行，函数体内禁止引用任何模块作用域符号/import；改动构建 target 前需评估序列化安全性。
 // 注入到页面的自包含框选遮罩：拖拽画框 → 8 手柄/整体拖动可调整 → Enter/✓ 确认、Esc/✕ 取消。
 export function selectRegionOverlay(): Promise<OverlayResult | null> {
   return new Promise((resolve) => {
@@ -151,8 +152,10 @@ export function selectRegionOverlay(): Promise<OverlayResult | null> {
     }
 
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.preventDefault(); finish(false); }
-      else if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      if (e.key === 'Escape') { e.preventDefault(); finish(false); return; }
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); return; }
+      const scrollKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', ' ', 'Spacebar'];
+      if (scrollKeys.includes(e.key)) e.preventDefault();
     }
 
     function stopScroll(e: Event) { e.preventDefault(); }

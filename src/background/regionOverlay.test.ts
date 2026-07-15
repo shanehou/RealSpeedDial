@@ -36,4 +36,36 @@ describe('selectRegionOverlay', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     await expect(promise).resolves.toBeNull();
   });
+
+  it('resizes from the SE handle', async () => {
+    const promise = selectRegionOverlay();
+    drag(100, 100, 300, 300); // sel = {100,100,200,200}
+    const se = document.querySelector('[data-dir="se"]') as HTMLElement;
+    se.dispatchEvent(new MouseEvent('mousedown', { clientX: 300, clientY: 300, bubbles: true }));
+    window.dispatchEvent(new MouseEvent('mousemove', { clientX: 400, clientY: 350, bubbles: true }));
+    window.dispatchEvent(new MouseEvent('mouseup', { clientX: 400, clientY: 350, bubbles: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await expect(promise).resolves.toEqual({ x: 100, y: 100, w: 300, h: 250, viewW: 1000, viewH: 800 });
+  });
+
+  it('moves the box and clamps it to the viewport', async () => {
+    const promise = selectRegionOverlay();
+    drag(100, 100, 300, 300); // sel = {100,100,200,200}
+    const box = document.querySelector('[data-rsd-region-overlay]')!.firstElementChild as HTMLElement;
+    box.dispatchEvent(new MouseEvent('mousedown', { clientX: 150, clientY: 150, bubbles: true }));
+    window.dispatchEvent(new MouseEvent('mousemove', { clientX: 2000, clientY: 2000, bubbles: true }));
+    window.dispatchEvent(new MouseEvent('mouseup', { clientX: 2000, clientY: 2000, bubbles: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await expect(promise).resolves.toEqual({ x: 800, y: 600, w: 200, h: 200, viewW: 1000, viewH: 800 });
+  });
+
+  it('prevents keyboard scrolling while active', async () => {
+    const promise = selectRegionOverlay();
+    drag(100, 100, 300, 300);
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true }); // 必须 cancelable:true
+    window.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); // 收尾让 promise resolve
+    await promise;
+  });
 });
