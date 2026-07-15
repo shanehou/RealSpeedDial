@@ -140,6 +140,23 @@ describe('service worker thumbnail capture', () => {
     });
   });
 
+  it('keeps a pending region capture when no exact bookmark matches', async () => {
+    const unmatched = { ...tab, url: 'https://example.com/dashboard' };
+    c.tabs.query.mockResolvedValue([unmatched]); // 让 captureVisibleData 的 validateActiveTab 通过
+    c.scripting.executeScript.mockResolvedValue([{ result: { x: 100, y: 80, w: 200, h: 160, viewW: 1000, viewH: 800 } }]);
+    await boot();
+    c.contextMenus.onClicked._emit({ menuItemId: 'capture-region-thumbnail' }, unmatched);
+
+    await vi.waitFor(() => expect(c.windows.create).toHaveBeenCalled());
+    const createArg = c.windows.create.mock.calls[0][0] as { url: string };
+    const captureId = new URL(createArg.url).searchParams.get('thumbnailPicker')!;
+    expect(await getPendingCapture(captureId)).toEqual(expect.objectContaining({
+      sourceUrl: unmatched.url,
+      dataUrl: 'data:image/jpeg;base64,current',
+      region: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 },
+    }));
+  });
+
   it('stores nothing when region selection is cancelled', async () => {
     c.scripting.executeScript.mockResolvedValue([{ result: null }]);
     await boot();
@@ -148,5 +165,7 @@ describe('service worker thumbnail capture', () => {
     await vi.waitFor(() => expect(c.tabs.captureVisibleTab).toHaveBeenCalled());
     await new Promise((r) => setTimeout(r, 0));
     expect(await getThumbnail('https://github.com')).toBeUndefined();
+    expect(c.scripting.executeScript).toHaveBeenCalled();
+    expect(c.windows.create).not.toHaveBeenCalled();
   });
 });

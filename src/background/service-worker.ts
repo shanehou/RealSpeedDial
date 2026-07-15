@@ -6,7 +6,7 @@ import { findExactBookmarkUrls, normalizePageUrl } from '@/lib/search';
 import type { RsdMessage, RsdResponse } from '@/lib/messages';
 import { resolveLang, t } from '@/lib/i18n';
 import { normalizeRect, isRegionTooSmall } from '@/lib/thumbFocus';
-import { selectRegionOverlay, type OverlayResult } from './regionOverlay';
+import { selectRegionOverlay } from './regionOverlay';
 import type { NormalizedRegion } from '@/types';
 import { createCaptureQueue } from './captureQueue';
 
@@ -148,7 +148,7 @@ async function storeOrPickCapture(pageUrl: string, dataUrl: string, region?: Nor
 
 async function runRegionOverlay(tabId: number): Promise<NormalizedRegion | null> {
   const [res] = await chrome.scripting.executeScript({ target: { tabId }, func: selectRegionOverlay });
-  const out = res?.result as OverlayResult | null | undefined;
+  const out = res?.result;
   if (!out || isRegionTooSmall(out)) return null;
   return normalizeRect(out, out.viewW, out.viewH);
 }
