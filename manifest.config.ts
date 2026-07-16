@@ -4,7 +4,8 @@ export default defineManifest({
   manifest_version: 3,
   name: 'Real Speed Dial',
   version: '1.0.0',
-  description: '类 Vivaldi 的书签 Speed Dial 新标签页',
+  description:
+    'Vivaldi-style bookmark Speed Dial new tab / 类 Vivaldi 的书签 Speed Dial 新标签页',
   minimum_chrome_version: '116',
   icons: {
     16: 'icons/icon16.png',

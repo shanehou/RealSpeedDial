@@ -1,7 +1,7 @@
 {
   "name": "real-speed-dial",
   "version": "1.0.0",
-  "description": "类 Vivaldi 的书签 Speed Dial 新标签页 Chrome 扩展",
+  "description": "Vivaldi-style bookmark Speed Dial new tab Chrome extension / 类 Vivaldi 的书签 Speed Dial 新标签页 Chrome 扩展",
   "private": true,
   "type": "module",
   "scripts": {
