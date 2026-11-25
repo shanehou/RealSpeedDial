@@ -2,11 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   flattenBookmarks,
   filterBookmarks,
-  buildSearchUrl,
+  searchWithDefaultProvider,
   searchBookmarks,
   findExactBookmarkUrls,
   searchBookmarkChoices,
 } from './search';
+import { installChromeMock } from '../../tests/setup';
 import type { BookmarkNode } from '@/types';
 
 const tree: BookmarkNode = { id: 'root', title: 'R', children: [
@@ -29,8 +30,15 @@ describe('search', () => {
   it('empty query returns nothing', () => {
     expect(filterBookmarks(tree, '  ')).toEqual([]);
   });
-  it('buildSearchUrl substitutes %s encoded', () => {
-    expect(buildSearchUrl('https://g.com/s?q=%s', 'a b')).toBe('https://g.com/s?q=a%20b');
+  it('searchWithDefaultProvider delegates to chrome.search.query with the trimmed query', async () => {
+    const c = installChromeMock();
+    await searchWithDefaultProvider('  real speed dial  ');
+    expect(c.search.query).toHaveBeenCalledWith({ text: 'real speed dial', disposition: 'CURRENT_TAB' });
+  });
+  it('searchWithDefaultProvider ignores a blank query', async () => {
+    const c = installChromeMock();
+    await searchWithDefaultProvider('   ');
+    expect(c.search.query).not.toHaveBeenCalled();
   });
 });
 

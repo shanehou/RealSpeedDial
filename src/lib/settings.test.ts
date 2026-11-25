@@ -25,6 +25,10 @@ describe('settings', () => {
     const s = await loadSettings();
     expect(s.background).toEqual({ type: 'color', light: '#123456', dark: '#123456' });
   });
+  it('drops the legacy custom search engine setting', async () => {
+    await chrome.storage.sync.set({ [SETTINGS_KEY]: { searchEngine: 'https://example.com/?q=%s' } });
+    expect(await loadSettings()).not.toHaveProperty('searchEngine');
+  });
   it('migrates the removed favicon tile style to themeColor', async () => {
     await chrome.storage.sync.set({ [SETTINGS_KEY]: { tileStyle: 'favicon' } });
     expect((await loadSettings()).tileStyle).toBe('themeColor');

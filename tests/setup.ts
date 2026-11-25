@@ -89,6 +89,7 @@ export function installChromeMock() {
     },
     windows: { create: vi.fn() },
     scripting: { executeScript: vi.fn() },
+    search: { query: vi.fn(async () => undefined) },
     action: { onClicked: makeEvent() },
   };
   vi.stubGlobal('chrome', chromeMock);

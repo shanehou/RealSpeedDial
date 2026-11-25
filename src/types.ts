@@ -74,7 +74,6 @@ export interface Settings {
   theme: 'system' | 'light' | 'dark';
   background: BackgroundSetting;
   columns: number;
-  searchEngine: string;
   language: Language;
 }
 
@@ -91,7 +90,6 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   background: { type: 'color', light: DEFAULT_BG_LIGHT, dark: DEFAULT_BG_DARK },
   columns: 6,
-  searchEngine: 'https://www.google.com/search?q=%s',
   language: 'auto',
 };
 

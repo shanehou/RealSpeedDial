@@ -10,7 +10,7 @@ A true Vivaldi-style Speed Dial for Chrome (Manifest V3): it takes over the new 
 
 - **Bookmark-driven Speed Dial**: pick a default landing folder in Settings; its direct bookmarks tile on the "Home" tab and each subfolder becomes a tab.
 - **Whole-tree navigation**: a clickable breadcrumb runs from the browser bookmarks root to the current folder; press **⤵ Enter** on a subfolder tab to make it the current folder. The browser Back key steps out level by level.
-- **Grouped search** across the whole tree — "Current folder" vs "Other folders" — with the full path shown on every result.
+- **Grouped search** across the whole tree — "Current folder" vs "Other folders" — with the full path shown on every result. Press Enter to search the web through Chrome's Search API, which uses **your own default search engine** and settings; the extension never bundles or switches providers.
 - **Real-link tiles**: hover shows the target URL in the browser status bar; middle/Cmd-click opens a new tab; right-click gives the in-app menu.
 - **Tile styles**: Icon + title with a stable URL-derived gradient, or screenshot with a readable text layer.
 - **Screenshot control**: thumbnails update when a bookmarked page is visited; the browser page context menu can capture the exact state you like. If the current URL is not bookmarked, a searchable picker lets you choose the target bookmark.
@@ -52,6 +52,7 @@ Upload `real-speed-dial.zip` to the [Chrome Web Store Developer Dashboard](https
 | `storage` | settings & nav state | install |
 | `favicon` | show site icons | install |
 | `contextMenus` + `activeTab` | capture the currently visible page from its browser context menu | install |
+| `search` | run web searches from the new tab with the browser's default search provider (`chrome.search`); no search provider is bundled or configured | install |
 | `scripting` | inject the region-selection overlay into the current tab on demand (paired with `activeTab`; no host permission prompt) | install |
 | `tabs` + `<all_urls>` | screenshot thumbnails (`captureVisibleTab`) | **requested on demand** (screenshot style / manual refresh) |
 | host perms for `bing.com` / `picsum.photos` / `api.unsplash.com` / `images.unsplash.com` | fetch the daily wallpaper | **requested on demand** (when Auto wallpaper is enabled) |

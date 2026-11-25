@@ -66,6 +66,15 @@ describe('App navigation', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /选择目录/ })).toBeInTheDocument());
   });
 
+  it('runs a web search through the default provider API on Enter', async () => {
+    render(<App />);
+    await userEvent.type(await screen.findByRole('searchbox'), 'chrome{Enter}');
+    await waitFor(() => expect(c.search.query).toHaveBeenCalledWith({
+      text: 'chrome',
+      disposition: 'CURRENT_TAB',
+    }));
+  });
+
   it('filters bookmarks live and groups by current folder', async () => {
     render(<App />);
     await screen.findByRole('tab', { name: '工作' });

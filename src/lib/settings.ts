@@ -12,9 +12,14 @@ function normalize(s: Settings): Settings {
   return { ...s, tileStyle };
 }
 
+type StoredSettings = Partial<Settings> & { searchEngine?: unknown };
+
 export async function loadSettings(): Promise<Settings> {
   const got = await chrome.storage.sync.get(SETTINGS_KEY);
-  return normalize({ ...DEFAULT_SETTINGS, ...((got[SETTINGS_KEY] as Partial<Settings>) ?? {}) });
+  const stored = { ...((got[SETTINGS_KEY] as StoredSettings) ?? {}) };
+  // 旧版本曾保存自定义搜索 URL；现已统一走 Chrome Search API（浏览器默认搜索引擎），丢弃该遗留字段。
+  delete stored.searchEngine;
+  return normalize({ ...DEFAULT_SETTINGS, ...stored });
 }
 
 export async function saveSettings(patch: Partial<Settings>): Promise<Settings> {

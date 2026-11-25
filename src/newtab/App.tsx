@@ -18,7 +18,7 @@ import { SearchBar } from './components/SearchBar';
 import { Attribution } from './components/Attribution';
 import { createBookmark, updateBookmark, removeBookmark, removeFolder, moveBookmark } from '@/lib/bookmarks';
 import { resolveReorderDestination } from '@/lib/reorder';
-import { searchBookmarks, buildSearchUrl } from '@/lib/search';
+import { searchBookmarks, searchWithDefaultProvider } from '@/lib/search';
 import { ensureCapturePermission } from '@/lib/permissions';
 import { resolveTheme } from '@/lib/theme';
 import { getAsset, deleteThumbnail } from '@/lib/thumbnails';
@@ -122,10 +122,14 @@ export default function App() {
     () => (root && folderId !== null ? searchBookmarks(root, query, folderId) : { current: [], others: [] }),
     [root, query, folderId],
   );
-  const submitSearch = useCallback((q: string) => {
-    if (!q.trim() || !settings) return;
-    window.location.href = buildSearchUrl(settings.searchEngine, q);
-  }, [settings]);
+  // 交给浏览器默认搜索引擎处理，尊重用户在 Chrome 设置中的搜索服务商选择。
+  const submitSearch = useCallback(async (q: string) => {
+    try {
+      await searchWithDefaultProvider(q);
+    } catch (err) {
+      console.error('Failed to search with the default provider', err);
+    }
+  }, []);
 
   const [dialog, setDialog] = useState<{ mode: EditMode; targetId?: string; initial: { title: string; url?: string } } | null>(null);
 

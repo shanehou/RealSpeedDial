@@ -3,7 +3,7 @@ import { defineManifest } from '@crxjs/vite-plugin';
 export default defineManifest({
   manifest_version: 3,
   name: 'Real Speed Dial',
-  version: '1.0.0',
+  version: '1.0.1',
   description:
     'Vivaldi-style bookmark Speed Dial new tab / 类 Vivaldi 的书签 Speed Dial 新标签页',
   minimum_chrome_version: '116',
@@ -13,7 +13,7 @@ export default defineManifest({
     48: 'icons/icon48.png',
     128: 'icons/icon128.png',
   },
-  permissions: ['bookmarks', 'storage', 'favicon', 'contextMenus', 'activeTab', 'scripting'],
+  permissions: ['bookmarks', 'storage', 'favicon', 'contextMenus', 'activeTab', 'scripting', 'search'],
   optional_permissions: ['tabs'],
   optional_host_permissions: [
     '<all_urls>',

@@ -20,8 +20,13 @@ export function filterBookmarks(root: BookmarkNode, query: string): SpeedDialBoo
   );
 }
 
-export function buildSearchUrl(template: string, query: string): string {
-  return template.replace('%s', encodeURIComponent(query));
+// 网页搜索一律走 Chrome Search API，使用用户在浏览器设置里选择的默认搜索引擎。
+// 新标签页不得自带搜索引擎选择（Chrome Web Store 单一用途政策），否则会同时修改
+// 新标签页与用户的搜索体验。空查询直接忽略。
+export async function searchWithDefaultProvider(query: string): Promise<void> {
+  const text = query.trim();
+  if (!text) return;
+  await chrome.search.query({ text, disposition: 'CURRENT_TAB' });
 }
 
 export interface SearchHit { id: string; title: string; url: string; path: Crumb[]; }

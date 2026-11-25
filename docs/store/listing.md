@@ -24,6 +24,7 @@ Turn a new tab into a fast, visual launchpad built entirely from your Chrome boo
 - Clickable breadcrumb from the browser bookmarks root to the current folder
 - Enter any subfolder tab with one click; browser Back steps out level by level
 - Grouped search across the entire tree — Current folder vs Other folders — with full path on every result
+- Press Enter to search the web through Chrome's Search API, using your own default search engine and browser settings; no provider is bundled or changed
 
 **Tiles that behave like real links**
 - Hover shows the target URL in the status bar
@@ -42,7 +43,7 @@ Turn a new tab into a fast, visual launchpad built entirely from your Chrome boo
 - English and 中文 UI — follows your browser language by default
 
 **Privacy-first permissions**
-- Core features need bookmarks, storage, favicon, context menu, activeTab, and scripting access only
+- Core features need bookmarks, storage, favicon, context menu, activeTab, scripting, and search access only
 - Tab capture and wallpaper hosts are requested on demand when you enable those features
 - No backend, no account — settings and Unsplash keys stay on your device
 
@@ -58,6 +59,7 @@ Turn a new tab into a fast, visual launchpad built entirely from your Chrome boo
 - 从浏览器书签根到当前目录的可点击面包屑
 - 在子目录 Tab 上点「⤵ 进入」即可深入；浏览器后退键逐层返回
 - 跨整树分组搜索——「当前目录 / 其他目录」——每条结果都带完整路径
+- 按回车会通过 Chrome Search API 使用你自己的默认搜索引擎与浏览器设置进行网页搜索；不内置、也不更改搜索服务商
 
 **像真链接一样工作的磁贴**
 - 悬停时浏览器左下角显示目标网址
@@ -76,7 +78,7 @@ Turn a new tab into a fast, visual launchpad built entirely from your Chrome boo
 - 中英双语界面，默认跟随浏览器语言
 
 **隐私优先的权限设计**
-- 核心功能仅需书签、存储、favicon、右键菜单、activeTab 与 scripting 权限
+- 核心功能仅需书签、存储、favicon、右键菜单、activeTab、scripting 与 search 权限
 - 网页截图与壁纸相关主机权限在启用对应功能时按需申请
 - 无后台、无账号——设置与 Unsplash Key 仅存于本机
 
@@ -110,11 +112,11 @@ Turn a new tab into a fast, visual launchpad built entirely from your Chrome boo
 
 **English**
 
-This extension replaces the new tab page with a Speed Dial grid driven by the user’s Chrome bookmarks. Its only purpose is bookmark-based visual navigation on the new tab: folder tabs, search within the bookmark tree, optional webpage thumbnails for tiles, and optional daily wallpaper backgrounds. It does not change search settings, inject ads, or provide unrelated browser features.
+This extension replaces the new tab page with a Speed Dial grid driven by the user’s Chrome bookmarks. Its only purpose is bookmark-based visual navigation on the new tab: folder tabs, search within the bookmark tree, optional webpage thumbnails for tiles, and optional daily wallpaper backgrounds. When the user presses Enter in the new tab search box, the extension calls Chrome’s Search API so the browser’s own default search provider and settings are respected; it does not bundle, set, or change the search provider. It does not inject ads or provide unrelated browser features.
 
 **中文**
 
-本扩展仅将新标签页替换为基于 Chrome 书签的 Speed Dial 磁贴网格。唯一用途是在新标签页上提供书签可视化导航：目录 Tab、书签树搜索、可选的网页截图缩略图，以及可选的每日壁纸背景。不修改默认搜索、不注入广告、不提供无关浏览器功能。
+本扩展仅将新标签页替换为基于 Chrome 书签的 Speed Dial 磁贴网格。唯一用途是在新标签页上提供书签可视化导航：目录 Tab、书签树搜索、可选的网页截图缩略图，以及可选的每日壁纸背景。用户在新标签页搜索框按回车时，扩展调用 Chrome Search API，尊重浏览器自身的默认搜索引擎与设置；不内置、不设置、也不更改搜索服务商。不注入广告、不提供无关浏览器功能。
 
 ### 远程代码（Remote code）
 
@@ -184,6 +186,16 @@ Used with `activeTab` when the user chooses the page context-menu item to captur
 
 用户通过页面右键菜单「截取区域设为缩略图」时，与 `activeTab` 配合使用。向当前标签页注入一次性、自包含的框选遮罩，供用户拖拽并微调焦点区域；此流程无需永久主机权限。
 
+#### search
+
+**English**
+
+Lets the new tab search box hand a web query to Chrome's Search API (`chrome.search.query`) when the user presses Enter. This explicitly uses the search provider the user configured in Chrome, so the extension neither bundles a search engine nor changes the user's search settings or default provider.
+
+**中文**
+
+用户在新标签页搜索框按回车时，通过 Chrome Search API（`chrome.search.query`）把网页搜索请求交给浏览器处理。该 API 使用用户在 Chrome 中配置的搜索引擎，因此本扩展既不内置搜索引擎，也不修改用户的搜索设置或默认搜索服务商。
+
 #### storage
 
 **English**
@@ -203,3 +215,15 @@ Optional permission, requested only when the user enables screenshot tile style 
 **中文**
 
 可选权限，仅在用户开启截图磁贴样式或手动刷新缩略图时申请。配合 `chrome.tabs.captureVisibleTab` 及标签页查询/创建/关闭，在访问已收藏页面或按需截取时更新缩略图。基础的图标/主题色 Speed Dial 不需要此权限。
+
+---
+
+## 单一用途整改说明（可用于审核申诉 / Resubmission notes）
+
+**English**
+
+The extension's single purpose is a bookmark-driven Speed Dial on the new tab page. Following the "Quality guidelines – Single purpose" feedback (Red Argon), we removed the custom search-URL setting and the bundled Google search URL entirely. When the user presses Enter in the new tab search box, the extension now calls `chrome.search.query()` (Chrome Search API, with the `search` permission) so the web search always uses the provider and settings the user chose in Chrome. The extension no longer bundles, selects, or changes any search provider. Version 1.0.1 contains this change.
+
+**中文**
+
+本扩展的唯一用途是在新标签页提供由书签驱动的 Speed Dial。根据「质量指南 - 单一用途」（Red Argon）的反馈，我们已彻底移除自定义搜索 URL 设置和内置的 Google 搜索地址。用户在新标签页搜索框按回车时，扩展改为调用 `chrome.search.query()`（Chrome Search API，声明 `search` 权限），网页搜索始终使用用户在 Chrome 中选择的搜索引擎与设置。扩展不再内置、选择或更改任何搜索服务商。该修改包含在 1.0.1 版本中。
